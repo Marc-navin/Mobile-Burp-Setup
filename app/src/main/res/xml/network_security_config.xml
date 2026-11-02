@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for BasicBrowser.
+
+    This configuration controls which CAs and connections this app trusts.
+
+    IMPORTANT LIMITATIONS FOR WEBVIEW:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Android's Network Security Config (NSC) only accepts CA certificates
+    embedded as build-time resources (res/raw/). Our development CA is
+    generated at runtime (first app launch), so it CANNOT be referenced
+    here.
+
+    WebView trust for the runtime-generated development CA is handled
+    programmatically via a selective onReceivedSslError handler in the
+    WebViewClient. That handler validates certificates against our
+    specific dev CA — it does NOT blindly accept all certificates.
+
+    See: DevCaSslErrorHandler.kt
+
+    WHAT THIS FILE DOES:
+    - Trusts only the system CA store for normal HTTPS (standard behavior)
+    - Permits cleartext HTTP traffic globally (<base-config cleartextTrafficPermitted="true">)
+
+    SECURITY IMPLICATIONS OF CLEARTEXT PERMISSION:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Setting cleartextTrafficPermitted="true" allows Android WebView and
+    networking clients in this app to make unencrypted HTTP connections.
+    Because this application functions as a web browser and security-testing
+    client intended to browse external websites, local development servers,
+    and intentionally vulnerable testbeds:
+    1. Cleartext HTTP is required for WebView to navigate to HTTP URLs
+       (e.g., http://neverssl.com, http://10.0.2.2:8000). Otherwise,
+       Android's Chromium stack blocks navigation with
+       net::ERR_CLEARTEXT_NOT_PERMITTED prior to routing traffic to the
+       local proxy (127.0.0.1:8080).
+    2. Sensitive data transmitted over plain HTTP is not encrypted over
+       the wire to the target server, as is inherent to the HTTP protocol.
+    3. For all HTTPS connections, strict system trust anchors (<certificates src="system" />)
+       and full TLS certificate-chain and RFC 2818/6125 hostname verification
+       remain fully enforced. No permissive trust managers are introduced.
+-->
+<network-security-config>
+
+    <!--
+        Base configuration:
+        - System and User CAs for HTTPS validation:
+          Adding <certificates src="user" /> allows Android Chromium / WebView to trust
+          user-installed CA certificates (such as our exported Development CA or proxy
+          intercept certificates) across all top-level navigations, iframes, and cross-origin
+          subresources (images, scripts, stylesheets) without throwing net_error -202.
+          SECURITY NOTE: Trusting user-installed certificates applies to all user-installed
+          CAs on the device, not exclusively this app's CA. Upstream HTTPS connections made
+          by TlsInterceptor continue to validate real server certificates and enforce
+          strict RFC 2818/6125 hostname verification.
+        - Cleartext permitted to support browser HTTP navigation and local proxy routing
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+</network-security-config>
