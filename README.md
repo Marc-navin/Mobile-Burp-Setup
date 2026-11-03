@@ -192,6 +192,65 @@ HTTPS interception requires installing the development CA certificate on the And
 
 ---
 
+## 🚀 First-Time Setup — What To Do After Installing
+
+Follow these steps to get BasicBrowser ready for HTTP/HTTPS traffic inspection.
+
+### Step 1 — Launch BasicBrowser
+
+- Open BasicBrowser after installation.
+- Allow any required Android permissions when prompted.
+- Navigate to the Browser section.
+
+### Step 2 — Start the Local Proxy
+
+- Ensure the local proxy server is running.
+- BasicBrowser uses `127.0.0.1:8080` for its local proxy.
+- Keep the application running while using the browser.
+
+### Step 3 — Set Up the Development CA Certificate
+
+To inspect HTTPS traffic, you must install BasicBrowser's development CA certificate.
+
+1. Open the **CA Management** section.
+2. Generate or initialize the development CA if it has not already been created.
+3. Export the public CA certificate.
+4. Open Android Settings.
+5. Navigate to **Security → Encryption & credentials → Install a certificate → CA certificate**. The exact menu names may differ depending on your Android version.
+6. Select the exported BasicBrowser CA certificate.
+7. Follow Android's instructions to complete installation.
+
+**Important:** Installing a CA certificate allows the device to trust certificates signed by that CA. Only install certificates you trust.
+
+### Step 4 — Verify HTTPS Interception
+
+- Return to BasicBrowser.
+- Open the Browser section.
+- Visit an HTTPS website.
+- Check whether the HTTPS request and response appear in HTTP History.
+
+If HTTPS interception does not work, verify that the correct CA certificate is installed and that its fingerprint matches the active certificate shown in CA Management.
+
+### Step 5 — Explore the Main Features
+
+| Feature | Purpose |
+|---|---|
+| Browser | Browse websites through the local proxy |
+| HTTP History | Inspect captured requests and responses |
+| Intercept | Pause, inspect, modify, forward, or drop requests |
+| Repeater | Manually send and modify HTTP requests |
+| Variation Lab | Perform controlled request variation testing |
+
+### ⚠️ Important Security Notes
+
+- HTTPS interception requires the development CA to be installed.
+- BasicBrowser cannot independently verify Android's user-installed CA status.
+- Some applications use certificate pinning and may reject interception.
+- HTTP traffic is not encrypted.
+- Remove the development CA from Android when you no longer need it.
+- Use the tool only on systems and applications you own or are authorized to test.
+
+---
 ## Security Considerations
 
 Mobile Burp Suite is intended for authorized security testing and educational purposes.
