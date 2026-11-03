@@ -126,8 +126,10 @@ Additional components:
 - Android 7.0 (API 24) or later.
 
 ---
-
-## Installation & Setup
+---
+### If you are using the Android phone, you can download the latest version from the releases
+---
+## Installation & Setup for PCs
 
 ### 1. Clone the repository
 
