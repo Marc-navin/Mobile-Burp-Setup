@@ -1,6 +1,6 @@
-# BasicBrowser — Android HTTP/HTTPS Interception Proxy
+# Mobile Burp Suite — Android HTTP/HTTPS Interception Proxy
 
-**BasicBrowser** is an Android-based browser and security testing tool designed to capture, inspect, and manipulate HTTP/HTTPS traffic directly from a mobile device.
+**Mobile Burp Suite** is an Android-based browser and security testing tool designed to capture, inspect, and manipulate HTTP/HTTPS traffic directly from a mobile device.
 
 The project combines a WebView-based browser with a local interception proxy, TLS interception, HTTP history, request modification, and security testing utilities.
 
@@ -68,7 +68,7 @@ The project combines a WebView-based browser with a local interception proxy, TL
 
 ## Architecture
 
-BasicBrowser uses a local proxy server to route browser traffic through its interception pipeline.
+Mobile Burp Suite uses a local proxy server to route browser traffic through its interception pipeline.
 
 ```text
               Android Browser (WebView)
@@ -173,13 +173,13 @@ app/build/outputs/apk/debug/app-debug.apk
 
 HTTPS interception requires installing the development CA certificate on the Android device.
 
-1. Launch BasicBrowser.
+1. Launch Mobile Burp Suite.
 2. Open the CA Management section.
 3. Export the public CA certificate.
 4. Open Android Settings.
 5. Navigate to Security / Encryption & credentials.
 6. Install the exported certificate as a CA certificate under User Credentials.
-7. Return to BasicBrowser.
+7. Return to Mobile Burp Suite.
 8. Browse an HTTPS website through the local proxy.
 
 **Important:**
@@ -192,7 +192,7 @@ HTTPS interception requires installing the development CA certificate on the And
 
 ## Security Considerations
 
-BasicBrowser is intended for authorized security testing and educational purposes.
+Mobile Burp Suite is intended for authorized security testing and educational purposes.
 
 - Use only against applications and systems you own or have explicit permission to test.
 - The development CA private key must remain protected in application-private storage.
@@ -231,7 +231,7 @@ These results describe the tested development snapshot and are not a formal secu
 
 ## Project Status
 
-**BasicBrowser v1.0 Release Candidate**
+**Mobile Burp Suite v1.0 Release Candidate**
 
 The core browser, proxy, TLS interception, HTTP history, Intercept, Repeater, and Variation Lab functionality has undergone testing on physical Android hardware.
 
@@ -241,7 +241,7 @@ Further improvements and refinements may be introduced as development continues.
 
 ## Disclaimer
 
-BasicBrowser is an educational and security-testing project.
+Mobile Burp Suite is an educational and security-testing project.
 
 The developer is not responsible for unauthorized use, misuse, or damage caused by this software.
 
