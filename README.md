@@ -251,7 +251,7 @@ Always obtain appropriate authorization before performing security testing.
 
 ## Author
 
-**Marc**
+**Navin S**
 
 Cybersecurity Enthusiast | Android Security Tool Development
 
