@@ -1,6 +1,7 @@
 package com.example.basicbrowser.ui.dev
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.basicbrowser.proxy.tls.CertificateAuthority
 import com.example.basicbrowser.proxy.tls.LocalHttpsTestServer
+import com.example.basicbrowser.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -78,7 +80,7 @@ fun CaVerificationScreen(
     // Function to load CA info
     fun loadCaInfo() {
         if (!CertificateAuthority.isInitialized()) {
-            caStatus = "❌ NOT INITIALIZED"
+            caStatus = "NOT INITIALIZED"
             return
         }
 
@@ -94,27 +96,27 @@ fun CaVerificationScreen(
             exportedFingerprint = exportedFp ?: "None (Not yet exported)"
 
             exportStatus = when (CertificateAuthority.getExportStatus()) {
-                CertificateAuthority.ExportStatus.NOT_EXPORTED -> "ℹ️ Not exported"
-                CertificateAuthority.ExportStatus.EXPORTED_MATCHES -> "✅ Exported (Matches active CA)"
-                CertificateAuthority.ExportStatus.EXPORTED_MISMATCH -> "⚠️ Mismatch (Active CA differs from exported cert)"
+                CertificateAuthority.ExportStatus.NOT_EXPORTED -> "Not exported"
+                CertificateAuthority.ExportStatus.EXPORTED_MATCHES -> "Exported (Matches active CA)"
+                CertificateAuthority.ExportStatus.EXPORTED_MISMATCH -> "Mismatch (Active CA differs from exported cert)"
             }
 
             identityConsistency = when {
-                isRegenerated || hasChanged -> "⚠️ Active CA changed since export (Re-export required)"
-                exportedFp == null -> "ℹ️ Initial export required"
-                else -> "✅ Active CA matches exported certificate"
+                isRegenerated || hasChanged -> "Active CA changed since export (Re-export required)"
+                exportedFp == null -> "Initial export required"
+                else -> "Active CA matches exported certificate"
             }
 
-            installationStatus = "⚠️ Not verified (Manual installation in Android Settings required)"
+            installationStatus = "Not verified (Manual installation in Android Settings required)"
 
             if (isRegenerated || hasChanged) {
-                caStatus = "⚠️ CA Identity Mismatch / Regenerated"
+                caStatus = "CA Identity Mismatch / Regenerated"
                 caMismatchNotice = "The active development CA has changed or was regenerated after recovery. " +
                         "Any previously installed certificate in Android's User Credentials store " +
                         "no longer matches the active CA and cannot intercept HTTPS subresources. " +
                         "Please export the new certificate below and reinstall it in Android Settings."
             } else {
-                caStatus = "✅ Initialized (Ready to generate host certificates)"
+                caStatus = "Initialized (Ready to generate host certificates)"
                 caMismatchNotice = null
             }
 
@@ -156,19 +158,23 @@ fun CaVerificationScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("CA Management", fontWeight = FontWeight.Bold)
+                        Text("CA Management", fontWeight = FontWeight.Bold, color = OnSurface)
                         Text(
                             "HTTPS Interception Authority",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary
+                            fontFamily = FontFamily.Monospace,
+                            color = Primary
                         )
                     }
                 },
                 navigationIcon = {
                     TextButton(onClick = onBackClick) {
-                        Text("← Back")
+                        Text("← Back", color = Primary)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = SurfaceContainerLowest
+                )
             )
         }
     ) { paddingValues ->
@@ -188,7 +194,7 @@ fun CaVerificationScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "🔒 CA Certificate & Trust Management\nExport the public CA certificate and install it in Android Settings (User Credentials) to enable HTTPS interception.",
+                    text = "CA Certificate & Trust Management\nExport the public CA certificate and install it in Android Settings (User Credentials) to enable HTTPS interception.",
                     modifier = Modifier.padding(12.dp),
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontSize = 12.sp,
@@ -205,7 +211,7 @@ fun CaVerificationScreen(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "⚠️ CA Identity Mismatch / Regenerated",
+                            text = "CA Identity Mismatch / Regenerated",
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             fontSize = 13.sp
@@ -288,16 +294,16 @@ fun CaVerificationScreen(
                 InfoRow(
                     label = "Currently Valid",
                     value = when (isCurrentlyValid) {
-                        true -> "✅ Yes"
-                        false -> "❌ No"
+                        true -> "Yes"
+                        false -> "No"
                         null -> "—"
                     }
                 )
                 InfoRow(
                     label = "Private Key Available",
                     value = when (privateKeyAvailable) {
-                        true -> "✅ Yes (internally)"
-                        false -> "❌ No"
+                        true -> "Yes (internally)"
+                        false -> "No"
                         null -> "—"
                     }
                 )
@@ -314,9 +320,9 @@ fun CaVerificationScreen(
                         Thread {
                             val matched = CertificateAuthority.reloadFromDisk(context.applicationContext)
                             reloadResult = if (matched) {
-                                "✅ PASSED — CA reloaded from disk. Fingerprint matches."
+                                "PASSED — CA reloaded from disk. Fingerprint matches."
                             } else {
-                                "❌ FAILED — CA fingerprint changed after reload!"
+                                "FAILED — CA fingerprint changed after reload!"
                             }
                             isReloading = false
                             // Refresh displayed info
@@ -334,14 +340,14 @@ fun CaVerificationScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Reloading…")
                     } else {
-                        Text("🔄 Reload & Verify from Disk")
+                        Text("Reload & Verify from Disk")
                     }
                 }
 
                 if (reloadResult != null) {
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = if (reloadResult!!.startsWith("✅"))
+                            containerColor = if (reloadResult!!.startsWith("PASSED"))
                                 MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.errorContainer
@@ -410,19 +416,19 @@ fun CaVerificationScreen(
                             }
 
                             exportResult = if (savedPath != null) {
-                                "✅ Saved certificate to:\n$savedPath"
+                                "Saved certificate to:\n$savedPath"
                             } else {
-                                "✅ Certificate exported below (copy to clipboard)."
+                                "Certificate exported below (copy to clipboard)."
                             }
                             loadCaInfo()
                         } catch (e: Exception) {
-                            exportResult = "❌ Export failed: ${e.message}"
+                            exportResult = "Export failed: ${e.message}"
                         }
                     },
                     enabled = CertificateAuthority.isInitialized(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("📤 Export Public CA Certificate (.crt)")
+                    Text("Export Public CA Certificate (.crt)")
                 }
 
                 if (exportResult != null) {
@@ -453,7 +459,7 @@ fun CaVerificationScreen(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("📋 Copy PEM to Clipboard")
+                        Text("Copy PEM to Clipboard")
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -513,7 +519,7 @@ fun CaVerificationScreen(
                 InfoRow(label = "Certificate Issuer", value = diag?.issuer ?: "—")
                 InfoRow(
                     label = "Server Status",
-                    value = if (diag?.isRunning == true) "🟢 Running (${diag.testUrl})" else "⚪ Stopped (starts on click)"
+                    value = if (diag?.isRunning == true) "Running (${diag.testUrl})" else "Stopped (starts on click)"
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -567,7 +573,7 @@ fun CaVerificationScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Starting Test Server…")
                     } else {
-                        Text("🧪 Test CA Trust in WebView")
+                        Text("Test CA Trust in WebView")
                     }
                 }
 
@@ -595,16 +601,18 @@ private fun InfoSection(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = SurfaceContainerLow
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        border = BorderStroke(1.dp, SurfaceContainerHigh),
+        shape = RoundedCornerShape(10.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = title,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.primary,
+                fontSize = 13.sp,
+                fontFamily = FontFamily.Monospace,
+                color = Primary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             content()
@@ -626,13 +634,14 @@ private fun InfoRow(label: String, value: String) {
             text = label,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = OnSurface,
             modifier = Modifier.weight(0.4f)
         )
         Text(
             text = value,
             fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontFamily = FontFamily.Monospace,
+            color = OnSurfaceVariant,
             modifier = Modifier.weight(0.6f),
             textAlign = TextAlign.End
         )

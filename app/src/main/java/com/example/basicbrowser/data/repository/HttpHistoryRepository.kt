@@ -73,10 +73,28 @@ class HttpHistoryRepository internal constructor(
     fun getItemCount(): Int = items.size
 
     @Synchronized
-    fun clear() {
-        items.clear()
-        cleanAllTempFiles()
-        _history.value = emptyList()
+    fun deleteById(id: String): Boolean {
+        val index = items.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            val removed = items.removeAt(index)
+            cleanupEvictedItem(removed)
+            _history.value = items.toList()
+            return true
+        }
+        return false
+    }
+
+    @Synchronized
+    fun clear(preservedIds: Set<String> = emptySet()) {
+        if (preservedIds.isEmpty()) {
+            items.clear()
+            cleanAllTempFiles()
+        } else {
+            val toRemove = items.filter { it.id !in preservedIds }
+            items.removeAll(toRemove.toSet())
+            toRemove.forEach { cleanupEvictedItem(it) }
+        }
+        _history.value = items.toList()
     }
 
     private fun cleanupEvictedItem(item: HttpHistoryItem) {

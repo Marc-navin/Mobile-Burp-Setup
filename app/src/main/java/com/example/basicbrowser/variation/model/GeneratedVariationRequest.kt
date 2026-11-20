@@ -10,12 +10,15 @@ import com.example.basicbrowser.proxy.intercept.HttpRequestData
  * @param payloadSummary Text describing the payload or tuple tested in this request.
  * @param attackType The attack type used to produce this request.
  * @param activeInsertionPoint For Sniper mode: the specific insertion point being tested.
+ * @param positionPayloads Mapping of position description/identifier to the exact payload used in this request.
+ * @param rawRequestText The exact raw wire-format HTTP request string for inspection.
  */
 data class GeneratedVariationRequest(
     val index: Int,
     val request: HttpRequestData,
     val payloadSummary: String,
     val attackType: AttackType,
-    val activeInsertionPoint: InsertionPoint? = null
+    val activeInsertionPoint: InsertionPoint? = null,
+    val positionPayloads: Map<String, String> = emptyMap(),
+    val rawRequestText: String? = null
 )
-

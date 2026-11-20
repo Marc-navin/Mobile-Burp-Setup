@@ -1,5 +1,6 @@
 package com.example.basicbrowser.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import com.example.basicbrowser.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +26,7 @@ import com.example.basicbrowser.filter.engine.TrafficFilterEngine
 import com.example.basicbrowser.proxy.ProxyServer
 import com.example.basicbrowser.proxy.tls.CertificateAuthority
 import com.example.basicbrowser.scope.data.ScopeRepository
+import com.example.basicbrowser.theme.*
 
 /**
  * Centralized Settings Screen.
@@ -67,17 +73,19 @@ fun SettingsScreen(
                         Text(
                             text = "Settings",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 20.sp,
+                            color = OnSurface
                         )
                         Text(
                             text = "ABS Configuration & Preferences",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = OnSurfaceVariant
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = SurfaceContainerLowest
                 )
             )
         }
@@ -94,7 +102,7 @@ fun SettingsScreen(
                 SettingsGroupHeader(title = "TARGET & SCOPE")
                 Spacer(modifier = Modifier.height(6.dp))
                 SettingsCategoryCard(
-                    icon = "🎯",
+                    iconRes = R.drawable.ic_scope_target,
                     iconBackground = MaterialTheme.colorScheme.primaryContainer,
                     title = "Target & Scope",
                     description = "Manage included/excluded domains, CIDRs, IPs, and test URLs with the live scope tester.",
@@ -109,7 +117,7 @@ fun SettingsScreen(
                 SettingsGroupHeader(title = "SECURITY & CERTIFICATES")
                 Spacer(modifier = Modifier.height(6.dp))
                 SettingsCategoryCard(
-                    icon = "🔒",
+                    iconRes = R.drawable.ic_security_shield,
                     iconBackground = MaterialTheme.colorScheme.tertiaryContainer,
                     title = "CA Certificate & Trust",
                     description = "Development CA status, certificate export (PEM/DER), SHA-256 fingerprint, and trust verification.",
@@ -124,7 +132,7 @@ fun SettingsScreen(
                 SettingsGroupHeader(title = "NETWORK & PROXY")
                 Spacer(modifier = Modifier.height(6.dp))
                 SettingsCategoryCard(
-                    icon = "🔌",
+                    iconRes = R.drawable.ic_proxy_server,
                     iconBackground = MaterialTheme.colorScheme.secondaryContainer,
                     title = "Proxy Settings",
                     description = "Local TCP proxy configuration (127.0.0.1:8080), worker threads, connection status, and WebView routing.",
@@ -139,7 +147,7 @@ fun SettingsScreen(
                 SettingsGroupHeader(title = "TRAFFIC & RESOURCE FILTERING")
                 Spacer(modifier = Modifier.height(6.dp))
                 SettingsCategoryCard(
-                    icon = "🔍",
+                    iconRes = R.drawable.ic_filter_sliders,
                     iconBackground = MaterialTheme.colorScheme.primaryContainer,
                     title = "Traffic Filters",
                     description = "Configure Intercept early bypass rules (images, CSS, JS) and HTTP History display criteria.",
@@ -154,7 +162,7 @@ fun SettingsScreen(
                 SettingsGroupHeader(title = "GENERAL & STORAGE")
                 Spacer(modifier = Modifier.height(6.dp))
                 SettingsCategoryCard(
-                    icon = "⚙️",
+                    iconRes = R.drawable.ic_general_cpu,
                     iconBackground = MaterialTheme.colorScheme.surfaceVariant,
                     title = "General Settings",
                     description = "Memory protections, 200-transaction FIFO history limit, CA certificate cache, and application info.",
@@ -193,7 +201,7 @@ private fun SettingsGroupHeader(title: String) {
 
 @Composable
 private fun SettingsCategoryCard(
-    icon: String,
+    iconRes: Int,
     iconBackground: Color,
     title: String,
     description: String,
@@ -207,8 +215,9 @@ private fun SettingsCategoryCard(
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = SurfaceContainerLow
         ),
+        border = BorderStroke(1.dp, SurfaceContainerHigh),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -224,7 +233,12 @@ private fun SettingsCategoryCard(
                     .background(iconBackground),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = icon, fontSize = 22.sp)
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = null,
+                    tint = Primary,
+                    modifier = Modifier.size(22.dp)
+                )
             }
 
             Spacer(modifier = Modifier.width(14.dp))
@@ -239,7 +253,7 @@ private fun SettingsCategoryCard(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = OnSurface
                     )
 
                     Surface(
@@ -251,6 +265,7 @@ private fun SettingsCategoryCard(
                             color = badgeColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -261,18 +276,18 @@ private fun SettingsCategoryCard(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = OnSurfaceVariant,
                     lineHeight = 16.sp
                 )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Text(
-                text = "›",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.outline
+            Icon(
+                painter = painterResource(R.drawable.ic_action_chevron_right),
+                contentDescription = null,
+                tint = Outline,
+                modifier = Modifier.size(16.dp)
             )
         }
     }

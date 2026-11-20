@@ -1,6 +1,7 @@
 package com.example.basicbrowser.ui.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.webkit.WebViewFeature
 import com.example.basicbrowser.proxy.ProxyServer
+import com.example.basicbrowser.theme.*
 import kotlin.concurrent.thread
 
 /**
@@ -52,22 +54,24 @@ fun ProxySettingsScreen(
                         Text(
                             text = "Proxy Settings",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 20.sp,
+                            color = OnSurface
                         )
                         Text(
                             text = "Local TCP Proxy & Interception Core",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = OnSurfaceVariant
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = SurfaceContainerLowest
                 )
             )
         }
@@ -84,8 +88,9 @@ fun ProxySettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -183,8 +188,9 @@ fun ProxySettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -192,7 +198,7 @@ fun ProxySettingsScreen(
                         text = "Concurrency & Mobile Resource Bounds",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Primary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -206,7 +212,7 @@ fun ProxySettingsScreen(
                     Text(
                         text = "Bounded thread pool prevents memory starvation and out-of-memory errors on constrained Android devices.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = OnSurfaceVariant
                     )
                 }
             }
@@ -215,8 +221,9 @@ fun ProxySettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -224,7 +231,7 @@ fun ProxySettingsScreen(
                         text = "WebView Routing & Traffic Redirection",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Primary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -245,7 +252,7 @@ fun ProxySettingsScreen(
                     Text(
                         text = "All web navigation, subresource fetches (scripts, CSS, images), and API calls from the Browser tab are securely routed through the local proxy.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = OnSurfaceVariant
                     )
                 }
             }
@@ -254,8 +261,9 @@ fun ProxySettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {

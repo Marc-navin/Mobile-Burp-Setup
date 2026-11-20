@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_subpage_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#101419;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-tint": "#4cd7f6", "tertiary-container": "#e79400", "tertiary-fixed": "#ffddb8", "outline-variant": "#3d494c", "on-secondary-container": "#00311f", "error": "#ffb4ab", "on-secondary-fixed": "#002113", "inverse-on-surface": "#2d3136", "on-error-container": "#ffdad6", "primary-container": "#06b6d4", "on-surface-variant": "#bcc9cd", "on-primary": "#003640", "on-secondary": "#003824", "secondary": "#4edea3", "primary-fixed-dim": "#4cd7f6", "surface-container-low": "#181c21", "surface-container": "#1c2025", "background": "#101419", "on-tertiary": "#472a00", "on-surface": "#e0e2ea", "surface-container-high": "#262a30", "tertiary-fixed-dim": "#ffb95f", "surface-container-highest": "#31353b", "on-error": "#690005", "secondary-fixed": "#6ffbbe", "secondary-container": "#00a572", "on-tertiary-fixed-variant": "#653e00", "on-primary-container": "#00424f", "inverse-surface": "#e0e2ea", "surface-container-lowest": "#0a0e13", "tertiary": "#ffb95f", "outline": "#869397", "primary-fixed": "#acedff", "surface-variant": "#31353b", "on-secondary-fixed-variant": "#005236", "on-primary-fixed-variant": "#004e5c", "on-background": "#e0e2ea", "on-primary-fixed": "#001f26", "secondary-fixed-dim": "#4edea3", "primary": "#4cd7f6", "on-tertiary-fixed": "#2a1700", "inverse-primary": "#00687a", "surface-bright": "#36393f", "error-container": "#93000a", "surface-dim": "#101419", "on-tertiary-container": "#563400", "surface": "#101419" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter": "0.5rem", "margin": "0.75rem", "space-md": "0.5rem", "space-xl": "1rem", "space-xs": "0.25rem", "space-sm": "0.375rem", "space-lg": "0.75rem" }, fontFamily: { "code-sm": ["JetBrains Mono"], "headline-sm": ["Inter"], "label-sm": ["JetBrains Mono"], "label-md": ["Inter"], "body-sm": ["Inter"], "headline-md": ["Inter"], "headline-lg": ["Inter"], "code-md": ["JetBrains Mono"], "code-lg": ["JetBrains Mono"], "body-md": ["Inter"], "body-lg": ["Inter"] }, fontSize: { "code-sm": ["11px", { lineHeight: "15px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-sm": ["15px", { lineHeight: "20px", fontWeight: "600" }], "label-sm": ["10px", { lineHeight: "13px", letterSpacing: "0.05em", fontWeight: "600" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "body-sm": ["11px", { lineHeight: "15px", fontWeight: "400" }], "headline-md": ["18px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "600" }], "headline-lg": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "code-md": ["12px", { lineHeight: "17px", fontWeight: "400" }], "code-lg": ["13px", { lineHeight: "19px", fontWeight: "400" }], "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }], "body-lg": ["14px", { lineHeight: "20px", fontWeight: "400" }] } } } };</script><style>body { min-height: max(884px, 100dvh); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface min-h-screen flex flex-col antialiased selection:bg-primary/20 selection:text-primary"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl pt-safe shadow-[0_4px_20px_rgba(0,0,0,0.4)]"><div class="h-20 flex flex-col justify-between px-margin py-space-xs"><div class="flex items-center justify-between text-on-surface-variant font-code-sm text-code-sm"><span class="font-semibold text-on-surface">09:41</span><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[14px]">wifi</span><span class="material-symbols-outlined text-[14px]">signal_cellular_alt</span><span class="material-symbols-outlined text-[14px]">battery_charging_full</span></div></div><div class="flex items-center justify-between gap-space-sm pb-space-xs"><div class="flex items-center gap-space-xs"><a class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface hover:text-primary transition-colors" href="#" onclick="history.back(); return false;"><span class="material-symbols-outlined text-[20px]">arrow_back</span></a><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface font-bold leading-tight">Https &amp; Ca</span><span class="font-code-sm text-[10px] text-outline uppercase tracking-wider">Settings / HTTPS &amp; CA</span></div></div><div class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-code-sm text-code-sm shadow-[0_0_8px_rgba(78,222,163,0.15)]"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span><span class="font-semibold text-[10px] uppercase tracking-wider">PROXY ON</span></div></div></div></header><main class="flex flex-col relative w-full pt-20 pb-20 bg-surface min-h-screen"><div class="flex flex-col w-full px-margin pb-6 gap-space-md">
+<!-- 1. TOP STATUS & TOGGLE CARD -->
+<div class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">HTTPS Interception</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary font-code-sm text-code-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-semibold text-[10px] tracking-wider">ENABLED</span>
+</div>
+</div>
+<div class="flex items-start justify-between gap-space-md pt-1">
+<div class="flex flex-col flex-1 min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Active MITM Engine</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 leading-snug">
+          Intercept, inspect, and dynamically re-sign TLS requests using the local root CA.
+        </p>
+</div>
+<button class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-secondary-container transition-colors duration-200" id="toggle-mitm" onclick="toggleMitmState()" type="button">
+<span class="inline-block h-4 w-4 transform rounded-full bg-surface shadow-md transition-transform duration-200 translate-x-6" id="toggle-thumb"></span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs px-2.5 py-1.5 rounded bg-surface-container-high text-on-surface-variant text-[11px] leading-tight">
+<span class="material-symbols-outlined text-primary text-[15px] shrink-0">info</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Client apps must trust this CA via User Store, Magisk, or Network Security Config.</span>
+</div>
+</div>
+<!-- 2. SYSTEM TRUST / INSTALLATION STATUS -->
+<div class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">System Trust • Android Keystore</span>
+<span class="font-code-sm text-[10px] text-primary">API 24+</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container p-2.5 rounded">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">check_circle</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Certificate Installation</span>
+<span class="font-body-sm text-[10px] text-on-surface-variant">User Credential Storage</span>
+</div>
+</div>
+<span class="font-code-sm text-code-sm text-secondary bg-secondary/10 px-2 py-0.5 rounded font-semibold">
+        ● Installed
+      </span>
+</div>
+<div class="flex flex-col gap-0.5 px-1">
+<span class="font-label-sm text-[10px] text-outline uppercase tracking-wider">Target Scope</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant truncate">
+        Android 7.0+ Network Security Config or Root System Store
+      </span>
+</div>
+<button class="w-full h-9 rounded bg-surface-container-high hover:bg-surface-bright active:bg-surface-container-highest transition-colors flex items-center justify-center gap-2 text-primary font-label-md text-label-md font-semibold" type="button">
+<span class="material-symbols-outlined text-[16px]">security_update_good</span>
+<span>INSTALL TO SYSTEM STORE (ROOT / MAGISK)</span>
+</button>
+</div>
+<!-- 3. CERTIFICATE AUTHORITY OVERVIEW -->
+<div class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm gap-space-xs">
+<div class="flex items-center justify-between pb-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Certificate Authority • Root Spec</span>
+<span class="material-symbols-outlined text-outline text-[16px]">badge</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-surface-container-highest/40">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Common Name</span>
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Mobile Burp Development CA</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-surface-container-highest/40">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Standard</span>
+<span class="font-code-sm text-code-sm text-on-surface">Development CA (X.509v3)</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-surface-container-highest/40">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Key Algorithm</span>
+<span class="font-code-sm text-code-sm text-primary font-semibold">RSA-2048</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-surface-container-highest/40">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Issuer Organization</span>
+<span class="font-code-sm text-code-sm text-on-surface">Mobile Burp Security</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-surface-container-highest/40">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Subject Name</span>
+<span class="font-code-sm text-code-sm text-on-surface truncate max-w-[200px]">CN=Mobile Burp Development CA</span>
+</div>
+<div class="flex items-center justify-between pt-1.5">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Trust Status</span>
+<span class="font-code-sm text-code-sm text-secondary bg-secondary/10 px-2 py-0.5 rounded font-semibold">
+        User Trusted
+      </span>
+</div>
+</div>
+<!-- 4. CERTIFICATE VALIDITY -->
+<div class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Validity Period</span>
+<span class="font-code-sm text-[10px] text-secondary bg-secondary/10 px-1.5 py-0.5 rounded font-semibold">
+        VALID (3,512 DAYS REMAINING)
+      </span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs bg-surface-container p-2.5 rounded">
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-outline uppercase">Not Before</span>
+<span class="font-code-sm text-code-sm text-on-surface mt-0.5">2026-09-19</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant">00:00:00 UTC</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] text-outline uppercase">Not After</span>
+<span class="font-code-sm text-code-sm text-on-surface mt-0.5">2036-09-17</span>
+<span class="font-code-sm text-[10px] text-on-surface-variant">23:59:59 UTC</span>
+</div>
+</div>
+</div>
+<!-- 5. CERTIFICATE FINGERPRINTS -->
+<div class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Fingerprints • Cryptographic Hash</span>
+<span class="material-symbols-outlined text-outline text-[16px]">fingerprint</span>
+</div>
+<!-- SHA-256 -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">SHA-256 Fingerprint</span>
+<button class="flex items-center gap-1 text-primary hover:text-primary-fixed font-code-sm text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high transition-colors" onclick="copyValue('A4:91:7C:3B:82:1F:D5:4E:99:62:A0:18:7C:E3:4F:91:88:2B:60:E5:3C:99:A1:0F:7B:3E:49:12:D0:84:7A:51', this)" type="button">
+<span class="material-symbols-outlined text-[12px]">content_copy</span>
+<span>COPY</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest p-2 rounded select-all font-code-sm text-[11px] leading-relaxed text-on-surface break-all">
+        A4:91:7C:3B:82:1F:D5:4E:99:62:A0:18:7C:E3:4F:91:88:2B:60:E5:3C:99:A1:0F:7B:3E:49:12:D0:84:7A:51
+      </div>
+</div>
+<!-- SHA-1 -->
+<div class="flex flex-col gap-1 pt-1">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">SHA-1 Fingerprint</span>
+<button class="flex items-center gap-1 text-primary hover:text-primary-fixed font-code-sm text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high transition-colors" onclick="copyValue('3D:88:B4:90:F2:19:64:82:70:C1:B8:3F:4A:20:91:D8:77:E5:2A:04', this)" type="button">
+<span class="material-symbols-outlined text-[12px]">content_copy</span>
+<span>COPY</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest p-2 rounded select-all font-code-sm text-[11px] leading-relaxed text-on-surface break-all">
+        3D:88:B4:90:F2:19:64:82:70:C1:B8:3F:4A:20:91:D8:77:E5:2A:04
+      </div>
+</div>
+</div>
+<!-- 6. CERTIFICATE ACTIONS -->
+<div class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider pb-1">Certificate Actions</span>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-surface-container active:bg-surface-container-high transition-colors text-left" type="button">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-[20px]">visibility</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">View in Android Keystore</span>
+<span class="font-body-sm text-[11px] text-on-surface-variant">Inspect installed certificate via system credentials</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-surface-container active:bg-surface-container-high transition-colors text-left" type="button">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px]">download</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">Export Certificate (.der / .pem)</span>
+<span class="font-body-sm text-[11px] text-on-surface-variant">Save public cert to local device storage</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-2 rounded hover:bg-surface-container active:bg-surface-container-high transition-colors text-left" type="button">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-tertiary text-[20px]">autorenew</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-tertiary">Regenerate Development CA</span>
+<span class="font-body-sm text-[11px] text-on-surface-variant">Generate fresh private key &amp; invalidate prior trust</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-tertiary text-[18px]">chevron_right</span>
+</button>
+</div>
+<!-- 7. TECHNICAL CERTIFICATE DETAILS (Expandable Card) -->
+<div class="flex flex-col bg-surface-container-low rounded-lg p-space-md shadow-sm gap-space-xs">
+<button class="w-full flex items-center justify-between text-left" id="toggle-details" onclick="toggleDetailsCard()" type="button">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">code</span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">X.509 Technical Details</span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Certificate Raw Metadata</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] transition-transform duration-200" id="chevron-details">expand_more</span>
+</button>
+<div class="flex flex-col gap-1.5 pt-2" id="details-content">
+<div class="flex items-center justify-between py-1 border-b border-surface-container-highest/30">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Version</span>
+<span class="font-code-sm text-code-sm text-on-surface">3 (0x2)</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-surface-container-highest/30">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Serial Number</span>
+<span class="font-code-sm text-code-sm text-primary">5F:2A:90:8B:11:42:DE:09</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-surface-container-highest/30">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Signature Algorithm</span>
+<span class="font-code-sm text-code-sm text-on-surface">SHA256withRSA</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-surface-container-highest/30">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Public Key</span>
+<span class="font-code-sm text-code-sm text-on-surface">RSA 2048-bit (e: 65537)</span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-surface-container-highest/30">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Basic Constraints</span>
+<span class="font-code-sm text-code-sm text-secondary">CA:TRUE, Critical</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Key Usage</span>
+<span class="font-code-sm text-code-sm text-on-surface">Certificate Sign, CRL Sign</span>
+</div>
+</div>
+</div>
+<!-- 8. COMPLIANCE & SECURITY FOOTER NOTE -->
+<div class="flex items-start gap-2 p-3 rounded bg-surface-container-lowest text-on-surface-variant">
+<span class="material-symbols-outlined text-outline text-[16px] shrink-0 mt-0.5">verified</span>
+<p class="font-body-sm text-[11px] leading-snug">
+      Use this development CA only on devices and applications you are authorized to test. Never distribute the private key.
+    </p>
+</div>
+</div>
+<script>
+  function toggleMitmState() {
+    const btn = document.getElementById('toggle-mitm');
+    const thumb = document.getElementById('toggle-thumb');
+    const isActive = btn.classList.contains('bg-secondary-container');
+
+    if (isActive) {
+      btn.classList.remove('bg-secondary-container');
+      btn.classList.add('bg-surface-container-highest');
+      thumb.classList.remove('translate-x-6');
+      thumb.classList.add('translate-x-1');
+    } else {
+      btn.classList.add('bg-secondary-container');
+      btn.classList.remove('bg-surface-container-highest');
+      thumb.classList.add('translate-x-6');
+      thumb.classList.remove('translate-x-1');
+    }
+  }
+
+  function toggleDetailsCard() {
+    const content = document.getElementById('details-content');
+    const chevron = document.getElementById('chevron-details');
+    if (content.classList.contains('hidden')) {
+      content.classList.remove('hidden');
+      chevron.classList.remove('rotate-180');
+    } else {
+      content.classList.add('hidden');
+      chevron.classList.add('rotate-180');
+    }
+  }
+
+  function copyValue(text, btn) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[12px]">check</span><span>COPIED</span>';
+    setTimeout(() => {
+      btn.innerHTML = originalContent;
+    }, 1500);
+  }
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.6)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="browser" href="#"><span class="material-symbols-outlined text-[20px]">public</span><span class="font-label-sm text-label-sm tracking-wider">Browser</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="traffic" href="#"><span class="material-symbols-outlined text-[20px]">format_list_bulleted</span><span class="font-label-sm text-label-sm tracking-wider">Traffic</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="intercept" href="#"><span class="material-symbols-outlined text-[20px]">pause_circle</span><span class="font-label-sm text-label-sm tracking-wider">Intercept</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] py-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="repeater" href="#"><span class="material-symbols-outlined text-[20px]">terminal</span><span class="font-label-sm text-label-sm tracking-wider">Repeater</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] py-1 text-primary font-semibold transition-colors" data-path="https-ca" href="#"><span class="material-symbols-outlined text-[20px]">tune</span><span class="font-label-sm text-label-sm tracking-wider">Settings</span></a></div></nav></body></html>

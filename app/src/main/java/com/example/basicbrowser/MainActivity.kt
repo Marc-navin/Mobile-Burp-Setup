@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,6 +40,7 @@ import com.example.basicbrowser.proxy.tls.LocalHttpsTestServer
 import androidx.webkit.ProxyConfig
 import androidx.webkit.ProxyController
 import androidx.webkit.WebViewFeature
+import androidx.webkit.WebSettingsCompat
 
 import com.example.basicbrowser.ui.history.HistoryScreen
 import com.example.basicbrowser.ui.history.HistoryDetailScreen
@@ -48,6 +51,10 @@ import com.example.basicbrowser.variation.ui.VariationScreen
 import com.example.basicbrowser.ui.dev.CaVerificationScreen
 import com.example.basicbrowser.scope.ui.ScopeScreen
 import com.example.basicbrowser.ui.settings.SettingsScreen
+import com.example.basicbrowser.theme.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import com.example.basicbrowser.ui.settings.ProxySettingsScreen
 import com.example.basicbrowser.ui.settings.TrafficFiltersScreen
 import com.example.basicbrowser.ui.settings.GeneralSettingsScreen
@@ -118,6 +125,7 @@ class MainActivity : ComponentActivity() {
         Thread {
             com.example.basicbrowser.scope.data.ScopeRepository.getInstance(applicationContext)
             com.example.basicbrowser.filter.data.TrafficFilterRepository.getInstance(applicationContext)
+            com.example.basicbrowser.data.repository.RequestAnnotationRepository.getInstance(applicationContext)
 
             com.example.basicbrowser.data.repository.HttpHistoryRepository.getInstance()
                 .setTempFilesDir(applicationContext.cacheDir)
@@ -249,12 +257,28 @@ fun AppScreen(externalUrl: String? = null) {
                 currentScreen !is Screen.InterceptDetail
             ) {
                 NavigationBar(
+                    containerColor = SurfaceContainerLowest,
+                    contentColor = OnSurface,
                     windowInsets = WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
                 ) {
+                    val navItemColors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Primary,
+                        selectedTextColor = Primary,
+                        indicatorColor = SurfaceContainerHigh,
+                        unselectedIconColor = OnSurfaceVariant,
+                        unselectedTextColor = OnSurfaceVariant
+                    )
                     NavigationBarItem(
-                        icon = { Text("🌐", fontSize = 16.sp) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_browser),
+                                contentDescription = "Browser",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
                         label = { NavigationBarLabel("Browser") },
                         selected = currentScreen == Screen.Browser,
+                        colors = navItemColors,
                         onClick = {
                             previousScreen = currentScreen
                             currentScreen = Screen.Browser
@@ -265,53 +289,91 @@ fun AppScreen(externalUrl: String? = null) {
                             BadgedBox(
                                 badge = {
                                     if (pausedRequests.isNotEmpty()) {
-                                        Badge { Text("${pausedRequests.size}", fontSize = 9.sp) }
+                                        Badge(
+                                            containerColor = TertiaryContainer,
+                                            contentColor = SurfaceContainerLowest
+                                        ) {
+                                            Text("${pausedRequests.size}", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                        }
                                     } else if (isInterceptEnabled) {
-                                        Badge(containerColor = MaterialTheme.colorScheme.primary)
+                                        Badge(containerColor = Primary)
                                     }
                                 }
                             ) {
-                                Text("⚡", fontSize = 16.sp)
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_nav_intercept),
+                                    contentDescription = "Intercept",
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         },
                         label = { NavigationBarLabel("Intercept") },
                         selected = currentScreen == Screen.Intercept,
+                        colors = navItemColors,
                         onClick = {
                             previousScreen = currentScreen
                             currentScreen = Screen.Intercept
                         }
                     )
                     NavigationBarItem(
-                        icon = { Text("🔁", fontSize = 16.sp) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_repeater),
+                                contentDescription = "Repeater",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
                         label = { NavigationBarLabel("Repeater") },
                         selected = currentScreen == Screen.Repeater,
+                        colors = navItemColors,
                         onClick = {
                             previousScreen = currentScreen
                             currentScreen = Screen.Repeater
                         }
                     )
                     NavigationBarItem(
-                        icon = { Text("🧪", fontSize = 16.sp) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_lab),
+                                contentDescription = "Lab",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
                         label = { NavigationBarLabel("Lab") },
                         selected = currentScreen == Screen.VariationLab,
+                        colors = navItemColors,
                         onClick = {
                             previousScreen = currentScreen
                             currentScreen = Screen.VariationLab
                         }
                     )
                     NavigationBarItem(
-                        icon = { Text("📜", fontSize = 16.sp) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_traffic),
+                                contentDescription = "History",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
                         label = { NavigationBarLabel("History") },
                         selected = currentScreen == Screen.History,
+                        colors = navItemColors,
                         onClick = {
                             previousScreen = currentScreen
                             currentScreen = Screen.History
                         }
                     )
                     NavigationBarItem(
-                        icon = { Text("⚙️", fontSize = 16.sp) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_nav_settings),
+                                contentDescription = "Settings",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
                         label = { NavigationBarLabel("Settings") },
                         selected = isSettingsActive(currentScreen, previousScreen),
+                        colors = navItemColors,
                         onClick = {
                             previousScreen = currentScreen
                             currentScreen = Screen.Settings
@@ -352,6 +414,19 @@ fun AppScreen(externalUrl: String? = null) {
                     onNavigateToScope = {
                         previousScreen = currentScreen
                         currentScreen = Screen.TargetScope
+                    },
+                    onNavigateToBrowser = { url ->
+                        targetBrowserUrl = url
+                        previousScreen = currentScreen
+                        currentScreen = Screen.Browser
+                    },
+                    onNavigateToRepeater = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.Repeater
+                    },
+                    onNavigateToVariation = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.VariationLab
                     }
                 )
                 is Screen.InterceptDetail -> InterceptDetailScreen(
@@ -371,6 +446,19 @@ fun AppScreen(externalUrl: String? = null) {
                     onNavigateToScope = {
                         previousScreen = currentScreen
                         currentScreen = Screen.TargetScope
+                    },
+                    onNavigateToBrowser = { url ->
+                        targetBrowserUrl = url
+                        previousScreen = currentScreen
+                        currentScreen = Screen.Browser
+                    },
+                    onNavigateToRepeater = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.Repeater
+                    },
+                    onNavigateToVariation = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.VariationLab
                     }
                 )
                 is Screen.HistoryDetail -> HistoryDetailScreen(
@@ -463,11 +551,22 @@ fun BrowserScreen(
     var canGoForward by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
+    var zoomPercent by remember { mutableIntStateOf(100) }
+    var showZoomMenu by remember { mutableStateOf(false) }
 
     val isInterceptEnabled by interceptManager.isInterceptEnabled.collectAsState()
     val pausedRequests by interceptManager.pausedRequests.collectAsState()
 
     val context = LocalContext.current
+
+    val applyZoom: (Int) -> Unit = { percent ->
+        zoomPercent = percent
+        webView?.settings?.textZoom = percent
+        webView?.evaluateJavascript(
+            "if (document.body) { document.body.style.zoom = '${percent / 100.0}'; }",
+            null
+        )
+    }
 
     // Handle system back button ONLY when Browser tab is active
     BackHandler(enabled = isActive && canGoBack) {
@@ -494,28 +593,45 @@ fun BrowserScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Use WindowInsets for edge-to-edge
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp)
-                .windowInsetsPadding(WindowInsets.statusBars),
+                .background(SurfaceContainerLowest)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
                 onClick = { webView?.let { customGoBack(it) } },
                 enabled = canGoBack,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(SurfaceContainerLow, RoundedCornerShape(8.dp))
+                    .border(1.dp, SurfaceContainerHigh, RoundedCornerShape(8.dp))
             ) {
-                Text("<", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "<",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (canGoBack) OnSurface else Outline
+                )
             }
+            Spacer(modifier = Modifier.width(4.dp))
             IconButton(
                 onClick = { webView?.goForward() },
                 enabled = canGoForward,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(SurfaceContainerLow, RoundedCornerShape(8.dp))
+                    .border(1.dp, SurfaceContainerHigh, RoundedCornerShape(8.dp))
             ) {
-                Text(">", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    ">",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (canGoForward) OnSurface else Outline
+                )
             }
+            Spacer(modifier = Modifier.width(4.dp))
             IconButton(
                 onClick = {
                     if (isLoading) {
@@ -525,12 +641,16 @@ fun BrowserScreen(
                         webView?.reload()
                     }
                 },
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(SurfaceContainerLow, RoundedCornerShape(8.dp))
+                    .border(1.dp, SurfaceContainerHigh, RoundedCornerShape(8.dp))
             ) {
                 Text(
                     text = if (isLoading) "✕" else "↻",
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = OnSurface
                 )
             }
             OutlinedTextField(
@@ -541,9 +661,18 @@ fun BrowserScreen(
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 6.dp),
-                shape = RoundedCornerShape(24.dp),
+                    .padding(horizontal = 4.dp),
+                shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = SurfaceContainerLow,
+                    unfocusedContainerColor = SurfaceContainerLow,
+                    focusedBorderColor = Primary,
+                    unfocusedBorderColor = SurfaceContainerHigh,
+                    focusedTextColor = OnSurface,
+                    unfocusedTextColor = OnSurface,
+                    cursorColor = Primary
+                ),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
                     imeAction = ImeAction.Go
@@ -557,56 +686,76 @@ fun BrowserScreen(
                             urlInput = TextFieldValue("")
                             isUserEditing = true
                         }) {
-                            Text("✕")
+                            Text("✕", color = Outline)
                         }
                     }
                 }
             )
             Button(
                 onClick = { navigateToTarget() },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Primary,
+                    contentColor = OnPrimary
+                ),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text("Go", fontWeight = FontWeight.Bold)
             }
         }
 
-        // Quick Controls Row: Intercept Toggle & CA Trust Test
+        // Quick Controls Row: Intercept Toggle, Test CA Trust (Center), Zoom Option (Right)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 2.dp),
+                .background(Surface)
+                .padding(horizontal = 8.dp, vertical = 3.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FilterChip(
-                selected = isInterceptEnabled,
+            // 1. Intercept Toggle (Left)
+            Surface(
                 onClick = { interceptManager.setEnabled(!isInterceptEnabled) },
-                label = {
-                    Text(
-                        if (isInterceptEnabled) "⚡ Intercept: ON" else "⚡ Intercept: OFF",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp
+                shape = RoundedCornerShape(16.dp),
+                color = if (isInterceptEnabled) TertiaryContainer.copy(alpha = 0.2f) else SurfaceContainerLow,
+                border = BorderStroke(
+                    1.dp,
+                    if (isInterceptEnabled) TertiaryContainer.copy(alpha = 0.5f) else SurfaceContainerHigh
+                ),
+                modifier = Modifier.padding(vertical = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_action_zap),
+                        contentDescription = null,
+                        tint = if (isInterceptEnabled) Tertiary else Outline,
+                        modifier = Modifier.size(13.dp)
                     )
-                },
-                leadingIcon = if (pausedRequests.isNotEmpty()) {
-                    {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (isInterceptEnabled) "Intercept: ON" else "Intercept: OFF",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = if (isInterceptEnabled) Tertiary else OnSurfaceVariant
+                    )
+                    if (pausedRequests.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(4.dp))
                         Badge(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = TertiaryContainer,
+                            contentColor = SurfaceContainerLowest
                         ) {
-                            Text("${pausedRequests.size}", fontSize = 10.sp)
+                            Text("${pausedRequests.size}", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                } else null,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+                }
+            }
 
-            // Temporary DEVELOPMENT ONLY: CA Trust Test trigger
-            FilledTonalButton(
+            // 2. CA Trust Test trigger (Center)
+            Surface(
                 onClick = {
                     isUserEditing = false
                     Thread {
@@ -619,20 +768,160 @@ fun BrowserScreen(
                         }
                     }.start()
                 },
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                modifier = Modifier.height(28.dp)
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceContainerLow,
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
+                modifier = Modifier.padding(vertical = 2.dp)
             ) {
-                Text("🧪 Test CA Trust", fontSize = 11.sp)
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_security_shield),
+                        contentDescription = null,
+                        tint = Primary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Test CA Trust",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Primary
+                    )
+                }
+            }
+
+            // 3. Zoom Option (Right)
+            Box {
+                Surface(
+                    onClick = { showZoomMenu = !showZoomMenu },
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (zoomPercent != 100) Primary.copy(alpha = 0.15f) else SurfaceContainerLow,
+                    border = BorderStroke(
+                        1.dp,
+                        if (zoomPercent != 100) Primary.copy(alpha = 0.5f) else SurfaceContainerHigh
+                    ),
+                    modifier = Modifier.padding(vertical = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_action_zoom),
+                            contentDescription = "Zoom",
+                            tint = if (zoomPercent != 100) Primary else OnSurfaceVariant,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (zoomPercent == 100) "Zoom" else "$zoomPercent%",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (zoomPercent != 100) Primary else OnSurfaceVariant
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = showZoomMenu,
+                    onDismissRequest = { showZoomMenu = false },
+                    modifier = Modifier.background(SurfaceContainer)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = {
+                                val newZoom = (zoomPercent - 25).coerceAtLeast(25)
+                                applyZoom(newZoom)
+                            },
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(SurfaceContainerHigh, RoundedCornerShape(6.dp))
+                        ) {
+                            Text("-", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = OnSurface)
+                        }
+
+                        Text(
+                            text = "$zoomPercent%",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Primary,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+
+                        IconButton(
+                            onClick = {
+                                val newZoom = (zoomPercent + 25).coerceAtMost(300)
+                                applyZoom(newZoom)
+                            },
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(SurfaceContainerHigh, RoundedCornerShape(6.dp))
+                        ) {
+                            Text("+", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = OnSurface)
+                        }
+                    }
+
+                    HorizontalDivider(color = SurfaceContainerHigh)
+
+                    val presetLevels = listOf(50, 75, 100, 125, 150, 200)
+                    presetLevels.forEach { level ->
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (level == 100) "100% (Default)" else "$level%",
+                                        fontWeight = if (level == zoomPercent) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (level == zoomPercent) Primary else OnSurface,
+                                        fontSize = 13.sp
+                                    )
+                                    if (level == zoomPercent) {
+                                        Text("✓", color = Primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            },
+                            onClick = {
+                                applyZoom(level)
+                                showZoomMenu = false
+                            }
+                        )
+                    }
+
+                    if (zoomPercent != 100) {
+                        HorizontalDivider(color = SurfaceContainerHigh)
+                        DropdownMenuItem(
+                            text = {
+                                Text("Reset to 100%", color = Tertiary, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                            },
+                            onClick = {
+                                applyZoom(100)
+                                showZoomMenu = false
+                            }
+                        )
+                    }
+                }
             }
         }
 
         if (isLoading) {
             LinearProgressIndicator(
                 progress = { progress / 100f },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = Primary,
+                trackColor = SurfaceContainerLow
             )
-        } else {
-            Spacer(modifier = Modifier.height(4.dp)) // To keep layout stable
         }
 
         AndroidView(
@@ -641,6 +930,29 @@ fun BrowserScreen(
                 WebView(context).apply {
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
+                    settings.setSupportZoom(true)
+                    settings.builtInZoomControls = true
+                    settings.displayZoomControls = false
+                    settings.textZoom = zoomPercent
+
+                    // Clean up any dark mode cookie so Google and websites render in default mode
+                    try {
+                        val cookieManager = android.webkit.CookieManager.getInstance()
+                        cookieManager.setAcceptCookie(true)
+                        cookieManager.setCookie("https://www.google.com", "PREF=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.google.com")
+                        cookieManager.setCookie("https://google.com", "PREF=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.google.com")
+                        cookieManager.flush()
+                    } catch (e: Exception) {
+                        Log.w("MainActivity", "Cookie cleanup: ${e.message}")
+                    }
+
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, false)
+                    }
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                        @Suppress("DEPRECATION")
+                        WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_OFF)
+                    }
 
                     webViewClient = object : WebViewClient() {
                         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -656,6 +968,14 @@ fun BrowserScreen(
                             canGoForward = view?.canGoForward() ?: false
                             if (!isAddressBarFocused) {
                                 isUserEditing = false
+                            }
+                            // Re-apply zoom if non-default
+                            if (zoomPercent != 100) {
+                                view?.settings?.textZoom = zoomPercent
+                                view?.evaluateJavascript(
+                                    "if (document.body) { document.body.style.zoom = '${zoomPercent / 100.0}'; }",
+                                    null
+                                )
                             }
                         }
 

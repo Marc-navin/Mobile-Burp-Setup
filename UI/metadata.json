@@ -1,0 +1,6 @@
+{
+  "name": "Mobile Burp — NetProxy Security",
+  "description": "Mobile-first HTTP/HTTPS security proxy, packet inspector, request interceptor, and repeater workbench.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

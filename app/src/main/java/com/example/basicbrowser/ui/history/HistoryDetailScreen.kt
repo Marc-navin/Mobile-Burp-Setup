@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import com.example.basicbrowser.R
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -88,7 +90,11 @@ fun HistoryDetailScreen(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                         modifier = Modifier.height(32.dp)
                     ) {
-                        Text("🔁", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_repeater),
+                            contentDescription = "Send to Repeater",
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     FilledTonalButton(
@@ -111,7 +117,11 @@ fun HistoryDetailScreen(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                         modifier = Modifier.height(32.dp)
                     ) {
-                        Text("🧪", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_lab),
+                            contentDescription = "Send to Variation Lab",
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
@@ -560,7 +570,11 @@ private fun BodyContainer(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(12.dp)
                 ) {
-                    Text("📦", fontSize = 20.sp)
+                    Icon(
+                        painter = painterResource(R.drawable.ic_proxy_server),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = analysis.binarySummary,

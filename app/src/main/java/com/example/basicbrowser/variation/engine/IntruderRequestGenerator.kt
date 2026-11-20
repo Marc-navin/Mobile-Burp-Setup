@@ -100,29 +100,55 @@ object IntruderRequestGenerator {
         attackType: AttackType,
         insertionPoints: List<InsertionPoint>,
         sniperPayloads: List<String>,
-        clusterBombPayloads: Map<String, List<String>>
+        clusterBombPayloads: Map<String, List<String>>,
+        batteringRamPayloads: List<String> = emptyList(),
+        pitchforkPayloads: Map<String, List<String>> = emptyMap()
     ): Int {
         if (insertionPoints.isEmpty()) return 0
 
         return when (attackType) {
             AttackType.SNIPER -> {
-                if (sniperPayloads.isEmpty()) 0 else insertionPoints.size * sniperPayloads.size
-            }
-            AttackType.CLUSTER_BOMB -> {
-                var total = 1L
-                for (ip in insertionPoints) {
-                    val count = clusterBombPayloads[ip.id]?.size?.toLong() ?: 0L
-                    if (count == 0L) return 0
-                    total = try {
-                        Math.multiplyExact(total, count)
+                if (sniperPayloads.isEmpty()) 0 else {
+                    val total = try {
+                        Math.multiplyExact(insertionPoints.size.toLong(), sniperPayloads.size.toLong())
                     } catch (_: ArithmeticException) {
                         Long.MAX_VALUE
                     }
                     if (total > HARD_CAP_MAX_REQUESTS) {
                         return if (total > Int.MAX_VALUE) Int.MAX_VALUE else total.toInt()
                     }
+                    total.toInt()
                 }
-                total.toInt()
+            }
+            AttackType.BATTERING_RAM -> {
+                val payloads = if (batteringRamPayloads.isNotEmpty()) batteringRamPayloads else sniperPayloads
+                payloads.size
+            }
+            AttackType.PITCHFORK -> {
+                val pMap = if (pitchforkPayloads.isNotEmpty()) pitchforkPayloads else clusterBombPayloads
+                var minSize = Int.MAX_VALUE
+                for (ip in insertionPoints) {
+                    val count = pMap[ip.id]?.size ?: 0
+                    if (count == 0) return 0
+                    if (count < minSize) {
+                        minSize = count
+                    }
+                }
+                if (minSize == Int.MAX_VALUE) 0 else minSize
+            }
+            AttackType.CLUSTER_BOMB -> {
+                val pMap = if (clusterBombPayloads.isNotEmpty()) clusterBombPayloads else pitchforkPayloads
+                var total = 1L
+                for (ip in insertionPoints) {
+                    val count = pMap[ip.id]?.size?.toLong() ?: 0L
+                    if (count == 0L) return 0
+                    total = try {
+                        Math.multiplyExact(total, count)
+                    } catch (_: ArithmeticException) {
+                        Long.MAX_VALUE
+                    }
+                }
+                if (total > Int.MAX_VALUE) Int.MAX_VALUE else total.toInt()
             }
         }
     }
@@ -130,45 +156,74 @@ object IntruderRequestGenerator {
     /**
      * Generates the complete, deterministic list of [GeneratedVariationRequest]s.
      *
-     * Enforces the 500-request safety limit. Never silently truncates requests.
+     * Enforces the 500-request safety limit unless explicitly confirmed or configured. Never silently truncates requests.
      */
     fun generateRequests(config: VariationConfig): List<GeneratedVariationRequest> {
-        val insertionPoints = parseInsertionPoints(config.baseRequest)
+        val insertionPoints = if (config.rawTemplate != null) {
+            val markerResult = RawHttpConverter.validateMarkers(config.rawTemplate)
+            markerResult.positions.map { mp ->
+                InsertionPoint(
+                    id = mp.id,
+                    index = mp.index,
+                    location = MarkerLocation.BODY,
+                    baselineValue = mp.baselineValue,
+                    description = "Position #${mp.index + 1} (${mp.contextSnippet})"
+                )
+            }
+        } else {
+            parseInsertionPoints(config.baseRequest)
+        }
+
         if (insertionPoints.isEmpty()) {
-            if (config.attackType == AttackType.SNIPER && config.sniperPayloads.isNotEmpty()) {
+            if ((config.attackType == AttackType.SNIPER || config.attackType == AttackType.BATTERING_RAM) && config.getSinglePayloadSet().isNotEmpty()) {
+                val payloads = config.getSinglePayloadSet()
                 val total = if (config.maxRequestsOverride != null) {
-                    minOf(config.sniperPayloads.size, config.maxRequestsOverride, HARD_CAP_MAX_REQUESTS)
+                    minOf(payloads.size, config.maxRequestsOverride, HARD_CAP_MAX_REQUESTS)
                 } else {
-                    minOf(config.sniperPayloads.size, HARD_CAP_MAX_REQUESTS)
+                    minOf(payloads.size, HARD_CAP_MAX_REQUESTS)
                 }
                 return (0 until total).map { i ->
-                    val payload = config.sniperPayloads[i]
+                    val payload = payloads[i]
                     GeneratedVariationRequest(
                         index = i + 1,
                         request = config.baseRequest,
                         payloadSummary = payload,
-                        attackType = AttackType.SNIPER
+                        attackType = config.attackType
                     )
                 }
             }
             throw IllegalArgumentException("No insertion points marked (§...§). Please add markers in the URL, headers, or body.")
         }
 
+        val singleSet = config.getSinglePayloadSet()
+        val multiSets = config.getMultiPayloadSets()
+
         val total = calculateTotalRequests(
             attackType = config.attackType,
             insertionPoints = insertionPoints,
-            sniperPayloads = config.sniperPayloads,
-            clusterBombPayloads = config.clusterBombPayloads
+            sniperPayloads = singleSet,
+            clusterBombPayloads = multiSets,
+            batteringRamPayloads = singleSet,
+            pitchforkPayloads = multiSets
         )
 
         require(total > 0) { "Configuration produces 0 requests. Ensure all required payload lists are populated." }
-        require(total <= HARD_CAP_MAX_REQUESTS) {
-            "Calculated request count ($total) exceeds maximum safety limit of $HARD_CAP_MAX_REQUESTS. Reduce payloads or positions."
+
+        if (!config.userConfirmedExceedsThreshold && config.maxRequestsOverride == null) {
+            require(total <= HARD_CAP_MAX_REQUESTS) {
+                "Calculated request count ($total) exceeds maximum safety limit of $HARD_CAP_MAX_REQUESTS. Reduce payloads or positions."
+            }
+        } else {
+            require(total <= VariationConfig.MAX_SAFE_LIMIT) {
+                "Calculated request count ($total) exceeds application maximum limit of ${VariationConfig.MAX_SAFE_LIMIT}."
+            }
         }
 
         val generated = when (config.attackType) {
-            AttackType.SNIPER -> generateSniperRequests(config.baseRequest, insertionPoints, config.sniperPayloads)
-            AttackType.CLUSTER_BOMB -> generateClusterBombRequests(config.baseRequest, insertionPoints, config.clusterBombPayloads)
+            AttackType.SNIPER -> generateSniperRequests(config.baseRequest, insertionPoints, singleSet, config.rawTemplate)
+            AttackType.BATTERING_RAM -> generateBatteringRamRequests(config.baseRequest, insertionPoints, singleSet, config.rawTemplate)
+            AttackType.PITCHFORK -> generatePitchforkRequests(config.baseRequest, insertionPoints, multiSets, config.rawTemplate)
+            AttackType.CLUSTER_BOMB -> generateClusterBombRequests(config.baseRequest, insertionPoints, multiSets, config.rawTemplate)
         }
 
         return if (config.maxRequestsOverride != null && config.maxRequestsOverride < generated.size) {
@@ -180,16 +235,12 @@ object IntruderRequestGenerator {
 
     /**
      * Generates Sniper attack requests.
-     *
-     * One shared payload list is used. Each insertion point is tested individually
-     * with each payload, while all other positions retain their original baseline values.
-     *
-     * Total = Number of Insertion Points * Number of Payloads.
      */
     private fun generateSniperRequests(
         baseRequest: HttpRequestData,
         insertionPoints: List<InsertionPoint>,
-        payloads: List<String>
+        payloads: List<String>,
+        rawTemplate: String? = null
     ): List<GeneratedVariationRequest> {
         require(payloads.isNotEmpty()) { "Sniper attack requires at least one payload." }
         val total = insertionPoints.size * payloads.size
@@ -198,16 +249,32 @@ object IntruderRequestGenerator {
 
         for (activeIp in insertionPoints) {
             for (payload in payloads) {
-                // Value vector: active point gets payload, all other points retain baseline
                 val values = insertionPoints.map { ip ->
                     if (ip.index == activeIp.index) payload else ip.baselineValue
                 }
 
-                val substitutedRequest = substituteValues(baseRequest, values)
+                val substitutedRequest = if (rawTemplate != null) {
+                    val subRaw = RawHttpConverter.substituteRawMarkers(rawTemplate, values)
+                    val parsed = RawHttpConverter.parseRawHttp(subRaw)
+                    if (parsed.isValid) RawHttpConverter.toHttpRequestData(parsed) else substituteValues(baseRequest, values)
+                } else {
+                    substituteValues(baseRequest, values)
+                }
+
                 val summary = if (insertionPoints.size > 1) {
                     "${VariationSubstitution.truncateForDisplay(payload, 30)} (Pos #${activeIp.index + 1})"
                 } else {
                     VariationSubstitution.truncateForDisplay(payload, 40)
+                }
+
+                val posMap = insertionPoints.associate { ip ->
+                    val v = if (ip.index == activeIp.index) payload else "${ip.baselineValue} (baseline)"
+                    ip.description to v
+                }
+                val rawReq = if (rawTemplate != null) {
+                    RawHttpConverter.substituteRawMarkers(rawTemplate, values)
+                } else {
+                    RawHttpConverter.serializeToRawHttp(substitutedRequest)
                 }
 
                 requests.add(
@@ -216,10 +283,130 @@ object IntruderRequestGenerator {
                         request = substitutedRequest,
                         payloadSummary = summary,
                         attackType = AttackType.SNIPER,
-                        activeInsertionPoint = activeIp
+                        activeInsertionPoint = activeIp,
+                        positionPayloads = posMap,
+                        rawRequestText = rawReq
                     )
                 )
             }
+        }
+
+        return requests
+    }
+
+    /**
+     * Generates Battering Ram attack requests.
+     *
+     * One shared payload set. The exact same payload value is inserted simultaneously into all marked positions.
+     * Total = Number of Payloads.
+     */
+    private fun generateBatteringRamRequests(
+        baseRequest: HttpRequestData,
+        insertionPoints: List<InsertionPoint>,
+        payloads: List<String>,
+        rawTemplate: String? = null
+    ): List<GeneratedVariationRequest> {
+        require(payloads.isNotEmpty()) { "Battering Ram attack requires at least one payload." }
+        val requests = ArrayList<GeneratedVariationRequest>(payloads.size)
+        var reqIndex = 1
+
+        for (payload in payloads) {
+            val values = insertionPoints.map { payload }
+
+            val substitutedRequest = if (rawTemplate != null) {
+                val subRaw = RawHttpConverter.substituteRawMarkers(rawTemplate, values)
+                val parsed = RawHttpConverter.parseRawHttp(subRaw)
+                if (parsed.isValid) RawHttpConverter.toHttpRequestData(parsed) else substituteValues(baseRequest, values)
+            } else {
+                substituteValues(baseRequest, values)
+            }
+
+            val summary = VariationSubstitution.truncateForDisplay(payload, 40)
+
+            val posMap = insertionPoints.associate { ip ->
+                ip.description to payload
+            }
+            val rawReq = if (rawTemplate != null) {
+                RawHttpConverter.substituteRawMarkers(rawTemplate, values)
+            } else {
+                RawHttpConverter.serializeToRawHttp(substitutedRequest)
+            }
+
+            requests.add(
+                GeneratedVariationRequest(
+                    index = reqIndex++,
+                    request = substitutedRequest,
+                    payloadSummary = summary,
+                    attackType = AttackType.BATTERING_RAM,
+                    positionPayloads = posMap,
+                    rawRequestText = rawReq
+                )
+            )
+        }
+
+        return requests
+    }
+
+    /**
+     * Generates Pitchfork attack requests.
+     *
+     * One payload set per position. Sets advance in lockstep, stopping at the shortest set.
+     * Total = min(count_1, count_2, ..., count_N).
+     */
+    private fun generatePitchforkRequests(
+        baseRequest: HttpRequestData,
+        insertionPoints: List<InsertionPoint>,
+        payloadMap: Map<String, List<String>>,
+        rawTemplate: String? = null
+    ): List<GeneratedVariationRequest> {
+        val lists = insertionPoints.map { ip ->
+            val pList = payloadMap[ip.id].orEmpty()
+            require(pList.isNotEmpty()) {
+                "Insertion point '${ip.description}' has no payloads assigned."
+            }
+            pList
+        }
+
+        val minLen = lists.minOfOrNull { it.size } ?: 0
+        require(minLen > 0) { "Pitchfork attack requires all position payload sets to be non-empty." }
+
+        val requests = ArrayList<GeneratedVariationRequest>(minLen)
+        var reqIndex = 1
+
+        for (i in 0 until minLen) {
+            val values = lists.map { it[i] }
+
+            val substitutedRequest = if (rawTemplate != null) {
+                val subRaw = RawHttpConverter.substituteRawMarkers(rawTemplate, values)
+                val parsed = RawHttpConverter.parseRawHttp(subRaw)
+                if (parsed.isValid) RawHttpConverter.toHttpRequestData(parsed) else substituteValues(baseRequest, values)
+            } else {
+                substituteValues(baseRequest, values)
+            }
+
+            val summary = values.joinToString(" / ") {
+                VariationSubstitution.truncateForDisplay(it, 15)
+            }
+
+            val posMap = insertionPoints.mapIndexed { idx, ip ->
+                ip.description to values[idx]
+            }.toMap()
+            val rawReq = if (rawTemplate != null) {
+                RawHttpConverter.substituteRawMarkers(rawTemplate, values)
+            } else {
+                RawHttpConverter.serializeToRawHttp(substitutedRequest)
+            }
+
+            requests.add(
+                GeneratedVariationRequest(
+                    index = reqIndex++,
+                    request = substitutedRequest,
+                    payloadSummary = summary,
+                    attackType = AttackType.PITCHFORK,
+                    positionPayloads = posMap,
+                    rawRequestText = rawReq
+                )
+            )
         }
 
         return requests
@@ -236,7 +423,8 @@ object IntruderRequestGenerator {
     private fun generateClusterBombRequests(
         baseRequest: HttpRequestData,
         insertionPoints: List<InsertionPoint>,
-        payloadMap: Map<String, List<String>>
+        payloadMap: Map<String, List<String>>,
+        rawTemplate: String? = null
     ): List<GeneratedVariationRequest> {
         val lists = insertionPoints.map { ip ->
             val pList = payloadMap[ip.id].orEmpty()
@@ -251,9 +439,25 @@ object IntruderRequestGenerator {
         var reqIndex = 1
 
         for (tuple in combinations) {
-            val substitutedRequest = substituteValues(baseRequest, tuple)
+            val substitutedRequest = if (rawTemplate != null) {
+                val subRaw = RawHttpConverter.substituteRawMarkers(rawTemplate, tuple)
+                val parsed = RawHttpConverter.parseRawHttp(subRaw)
+                if (parsed.isValid) RawHttpConverter.toHttpRequestData(parsed) else substituteValues(baseRequest, tuple)
+            } else {
+                substituteValues(baseRequest, tuple)
+            }
+
             val summary = tuple.joinToString(" / ") {
                 VariationSubstitution.truncateForDisplay(it, 15)
+            }
+
+            val posMap = insertionPoints.mapIndexed { idx, ip ->
+                ip.description to tuple[idx]
+            }.toMap()
+            val rawReq = if (rawTemplate != null) {
+                RawHttpConverter.substituteRawMarkers(rawTemplate, tuple)
+            } else {
+                RawHttpConverter.serializeToRawHttp(substitutedRequest)
             }
 
             requests.add(
@@ -261,7 +465,9 @@ object IntruderRequestGenerator {
                     index = reqIndex++,
                     request = substitutedRequest,
                     payloadSummary = summary,
-                    attackType = AttackType.CLUSTER_BOMB
+                    attackType = AttackType.CLUSTER_BOMB,
+                    positionPayloads = posMap,
+                    rawRequestText = rawReq
                 )
             )
         }

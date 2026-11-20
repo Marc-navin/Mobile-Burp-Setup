@@ -11,6 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import com.example.basicbrowser.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -293,7 +295,7 @@ fun InterceptDetailScreen(
                         )
 
                         Text(
-                            text = "💡 Tip: Content-Length and Transfer-Encoding are automatically normalized upon forwarding to match the final body.",
+                            text = "Tip: Content-Length and Transfer-Encoding are automatically normalized upon forwarding to match the final body.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
@@ -319,7 +321,11 @@ fun InterceptDetailScreen(
                                     modifier = Modifier.padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("📦", fontSize = 28.sp)
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_proxy_server),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(28.dp)
+                                    )
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column {
                                         Text(

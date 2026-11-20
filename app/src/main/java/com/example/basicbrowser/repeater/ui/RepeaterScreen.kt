@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import com.example.basicbrowser.R
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +27,9 @@ import com.example.basicbrowser.repeater.data.RepeaterRepository
 import com.example.basicbrowser.repeater.model.ExecutionState
 import com.example.basicbrowser.repeater.model.RepeaterItem
 import com.example.basicbrowser.repeater.model.RepeaterResponse
+import com.example.basicbrowser.theme.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import java.nio.charset.StandardCharsets
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,24 +57,38 @@ fun RepeaterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = SurfaceContainerLowest,
+                    titleContentColor = OnSurface,
+                    navigationIconContentColor = OnSurface,
+                    actionIconContentColor = OnSurface
+                ),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🔁", fontSize = 18.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_repeater),
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Repeater",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            color = SurfaceContainerHigh,
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
                                 text = "${items.size}/5",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
+                                color = Primary,
+                                fontFamily = FontFamily.Monospace,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -77,7 +96,7 @@ fun RepeaterScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = OnSurface)
                     }
                 },
                 actions = {
@@ -91,13 +110,23 @@ fun RepeaterScreen(
                         },
                         enabled = selectedItem != null
                     ) {
-                        Text("🧪", fontSize = 16.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_lab),
+                            contentDescription = "Send to Lab",
+                            tint = OnSurface,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                     IconButton(
                         onClick = { repository.createBlankItem() },
                         enabled = items.size < RepeaterRepository.DEFAULT_MAX_ITEMS
                     ) {
-                        Text("➕", fontSize = 16.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_action_add),
+                            contentDescription = "Add tab",
+                            tint = OnSurface,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             )
@@ -106,6 +135,7 @@ fun RepeaterScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Surface)
                 .padding(paddingValues)
         ) {
             // Horizontal Item Tabs
@@ -113,6 +143,8 @@ fun RepeaterScreen(
                 ScrollableTabRow(
                     selectedTabIndex = items.indexOfFirst { it.id == selectedItem?.id }.coerceAtLeast(0),
                     edgePadding = 8.dp,
+                    containerColor = SurfaceContainerLowest,
+                    contentColor = Primary,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items.forEach { item ->
@@ -120,18 +152,22 @@ fun RepeaterScreen(
                         Tab(
                             selected = isSelected,
                             onClick = { repository.selectItem(item.id) },
+                            selectedContentColor = Primary,
+                            unselectedContentColor = OnSurfaceVariant,
                             text = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (item.executionState is ExecutionState.Executing) {
                                         CircularProgressIndicator(
                                             modifier = Modifier.size(12.dp),
-                                            strokeWidth = 2.dp
+                                            strokeWidth = 2.dp,
+                                            color = Primary
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                     }
                                     Text(
                                         text = item.name,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        fontFamily = FontFamily.Monospace
                                     )
                                 }
                             }
@@ -150,8 +186,14 @@ fun RepeaterScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Button(onClick = { repository.createBlankItem() }) {
-                        Text("Create New Request")
+                    Button(
+                        onClick = { repository.createBlankItem() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = OnPrimary
+                        )
+                    ) {
+                        Text("Create New Request", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -222,7 +264,8 @@ private fun RepeaterItemContent(
     Column(modifier = Modifier.fillMaxSize()) {
         // --- Target Destination & Controls Bar ---
         Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            color = SurfaceContainerLow,
+            border = BorderStroke(1.dp, SurfaceContainerHigh),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -239,14 +282,16 @@ private fun RepeaterItemContent(
                     modifier = Modifier.weight(1f)
                 ) {
                     Surface(
-                        color = if (isHttps) Color(0xFFE0E7FF) else Color(0xFFFEF9C3),
-                        shape = RoundedCornerShape(4.dp)
+                        color = if (isHttps) Status2xxBg else SurfaceContainerHigh,
+                        shape = RoundedCornerShape(4.dp),
+                        border = BorderStroke(1.dp, if (isHttps) Secondary.copy(alpha = 0.4f) else OutlineVariant)
                     ) {
                         Text(
                             text = if (isHttps) "HTTPS (TLS Verified)" else "HTTP",
-                            color = if (isHttps) Color(0xFF3730A3) else Color(0xFF854D0E),
+                            color = if (isHttps) Secondary else OnSurfaceVariant,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                         )
                     }
@@ -256,7 +301,7 @@ private fun RepeaterItemContent(
                         fontFamily = FontFamily.Monospace,
                         fontSize = 11.sp,
                         maxLines = 1,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = OnSurfaceVariant
                     )
                 }
 
@@ -266,9 +311,11 @@ private fun RepeaterItemContent(
                         Button(
                             onClick = { repository.cancelRequest(item.id) },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
+                                containerColor = ErrorContainer.copy(alpha = 0.4f),
+                                contentColor = Error
                             ),
+                            border = BorderStroke(1.dp, Error.copy(alpha = 0.4f)),
+                            shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                             modifier = Modifier.height(32.dp)
                         ) {
@@ -282,9 +329,10 @@ private fun RepeaterItemContent(
                                 repository.sendRequest(item.id)
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF16A34A),
-                                contentColor = Color.White
+                                containerColor = Primary,
+                                contentColor = OnPrimary
                             ),
+                            shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
                             modifier = Modifier.height(32.dp)
                         ) {
@@ -298,14 +346,23 @@ private fun RepeaterItemContent(
                         onClick = { repository.deleteItem(item.id) },
                         modifier = Modifier.size(32.dp)
                     ) {
-                        Text("🗑️", fontSize = 14.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_action_trash),
+                            contentDescription = "Close tab",
+                            tint = OnSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
             }
         }
 
         // --- Main Tabs (Request vs Response) ---
-        TabRow(selectedTabIndex = mainTabIndex) {
+        TabRow(
+            selectedTabIndex = mainTabIndex,
+            containerColor = SurfaceContainerLowest,
+            contentColor = Primary
+        ) {
             mainTabs.forEachIndexed { index, title ->
                 Tab(
                     selected = mainTabIndex == index,
@@ -313,20 +370,23 @@ private fun RepeaterItemContent(
                         flushEdits()
                         mainTabIndex = index
                     },
+                    selectedContentColor = Primary,
+                    unselectedContentColor = OnSurfaceVariant,
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(title, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text(title, fontWeight = FontWeight.Bold, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
                             if (index == 1 && item.response?.statusCode != null) {
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Surface(
-                                    color = if (item.response.statusCode in 200..299) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
+                                    color = if (item.response.statusCode in 200..299) Status2xxBg else Status4xxBg,
                                     shape = RoundedCornerShape(4.dp)
                                 ) {
                                     Text(
                                         text = "${item.response.statusCode}",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (item.response.statusCode in 200..299) Color(0xFF15803D) else Color(0xFFB91C1C),
+                                        fontFamily = FontFamily.Monospace,
+                                        color = if (item.response.statusCode in 200..299) Secondary else Error,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                     )
                                 }
@@ -466,7 +526,7 @@ private fun RepeaterItemContent(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "📦 Binary Request Payload (${rawBody?.size ?: 0} bytes). Text editing disabled to prevent binary corruption.",
+                                text = "Binary Request Payload (${rawBody?.size ?: 0} bytes). Text editing disabled to prevent binary corruption.",
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(10.dp)
                             )
@@ -535,7 +595,7 @@ private fun RepeaterItemContent(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = "🛑 Request was cancelled by user.",
+                                    text = "Request was cancelled by user.",
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -711,7 +771,12 @@ private fun RepeaterItemContent(
                                     modifier = Modifier.padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("📦", fontSize = 22.sp)
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_proxy_server),
+                                        contentDescription = null,
+                                        tint = Outline,
+                                        modifier = Modifier.size(22.dp)
+                                    )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = resp.binarySummary,
@@ -786,7 +851,12 @@ private fun RepeaterItemContent(
                                 modifier = Modifier.padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("🛰️", fontSize = 32.sp)
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_nav_repeater),
+                                    contentDescription = null,
+                                    tint = Outline,
+                                    modifier = Modifier.size(32.dp)
+                                )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "Ready to send",

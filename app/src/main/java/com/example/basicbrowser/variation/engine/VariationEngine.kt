@@ -3,6 +3,8 @@ package com.example.basicbrowser.variation.engine
 import android.util.Log
 import com.example.basicbrowser.proxy.intercept.HttpRequestData
 import com.example.basicbrowser.repeater.engine.RepeaterEngine
+import com.example.basicbrowser.variation.model.AttackType
+import com.example.basicbrowser.variation.model.InsertionPoint
 import com.example.basicbrowser.variation.model.TargetSummary
 import com.example.basicbrowser.variation.model.VariationConfig
 import com.example.basicbrowser.variation.model.VariationResult
@@ -106,7 +108,11 @@ class VariationEngine {
                     index = i + 1,
                     payload = genReq.payloadSummary,
                     request = genReq.request,
-                    target = target
+                    target = target,
+                    attackType = genReq.attackType,
+                    positionPayloads = genReq.positionPayloads,
+                    rawRequestText = genReq.rawRequestText,
+                    activeInsertionPoint = genReq.activeInsertionPoint
                 )
 
                 completed++
@@ -143,7 +149,11 @@ class VariationEngine {
         index: Int,
         payload: String,
         request: HttpRequestData,
-        target: TargetSummary
+        target: TargetSummary,
+        attackType: AttackType = AttackType.SNIPER,
+        positionPayloads: Map<String, String> = emptyMap(),
+        rawRequestText: String? = null,
+        activeInsertionPoint: InsertionPoint? = null
     ): VariationResult {
         if (isStopped.get()) {
             return VariationResult(
@@ -152,9 +162,55 @@ class VariationEngine {
                 statusCode = null,
                 responseSizeBytes = 0L,
                 elapsedTimeMs = 0L,
-                errorMessage = "Job stopped"
+                errorMessage = "Job stopped",
+                attackType = attackType,
+                positionPayloads = positionPayloads,
+                rawRequestText = rawRequestText,
+                activeInsertionPoint = activeInsertionPoint
             )
         }
+
+        // 1. Safety Check: Disallow requests with unresolved markers
+        if (request.url.contains(VariationSubstitution.MARKER) ||
+            request.headers.any { it.contains(VariationSubstitution.MARKER) } ||
+            (request.body != null && request.body.isNotEmpty() && String(request.body, StandardCharsets.UTF_8).contains(VariationSubstitution.MARKER)) ||
+            (rawRequestText != null && rawRequestText.contains(VariationSubstitution.MARKER))
+        ) {
+            return VariationResult(
+                index = index,
+                payload = payload,
+                statusCode = null,
+                responseSizeBytes = 0L,
+                elapsedTimeMs = 0L,
+                errorMessage = "Error: Unresolved payload marker (§) in request",
+                attackType = attackType,
+                positionPayloads = positionPayloads,
+                rawRequestText = rawRequestText,
+                activeInsertionPoint = activeInsertionPoint
+            )
+        }
+
+        // 2. Scope Check: Verify if destination URL is within defined target scope (if scope rules exist)
+        try {
+            val scopeRepo = com.example.basicbrowser.scope.data.ScopeRepository.getInstance()
+            if (scopeRepo.rules.value.isNotEmpty() && !scopeRepo.isInScope(request.url)) {
+                return VariationResult(
+                    index = index,
+                    payload = payload,
+                    statusCode = null,
+                    responseSizeBytes = 0L,
+                    elapsedTimeMs = 0L,
+                    errorMessage = "Blocked: Target URL is out of scope",
+                    attackType = attackType,
+                    positionPayloads = positionPayloads,
+                    rawRequestText = rawRequestText,
+                    activeInsertionPoint = activeInsertionPoint
+                )
+            }
+        } catch (_: Throwable) {
+            // Scope repository not initialized or unmocked in test environment
+        }
+
         val startTime = System.currentTimeMillis()
         var rawSocket: Socket? = null
         var sslSocket: SSLSocket? = null
@@ -285,7 +341,11 @@ class VariationEngine {
                 responseSizeBytes = totalBodyBytesRead,
                 elapsedTimeMs = elapsed,
                 errorMessage = if (bodyTruncated) "Response truncated at 50 MB limit" else null,
-                isTruncated = bodyTruncated
+                isTruncated = bodyTruncated,
+                attackType = attackType,
+                positionPayloads = positionPayloads,
+                rawRequestText = rawRequestText,
+                activeInsertionPoint = activeInsertionPoint
             )
 
         } catch (e: Exception) {
@@ -297,7 +357,11 @@ class VariationEngine {
                 statusCode = null,
                 responseSizeBytes = 0L,
                 elapsedTimeMs = elapsed,
-                errorMessage = msg
+                errorMessage = msg,
+                attackType = attackType,
+                positionPayloads = positionPayloads,
+                rawRequestText = rawRequestText,
+                activeInsertionPoint = activeInsertionPoint
             )
         } finally {
             closeQuietly(sslSocket)

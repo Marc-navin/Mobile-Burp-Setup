@@ -63,7 +63,7 @@ fun InterceptFilterDialog(
                     },
                     contentPadding = PaddingValues(0.dp)
                 ) {
-                    Text("🎯 Manage Target Scope →", fontSize = 12.sp)
+                    Text("Manage Target Scope →", fontSize = 12.sp)
                 }
 
                 HorizontalDivider()

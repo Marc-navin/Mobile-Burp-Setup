@@ -128,7 +128,7 @@ fun TrafficFilterBottomSheet(
                 },
                 contentPadding = PaddingValues(0.dp)
             ) {
-                Text("🎯 Manage Target Scope Rules →", fontSize = 12.sp)
+                Text("Manage Target Scope Rules →", fontSize = 12.sp)
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))

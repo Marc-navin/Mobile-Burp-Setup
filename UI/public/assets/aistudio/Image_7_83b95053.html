@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Mobile Burp - Integrated Security Browser</title>
+<!-- Google Fonts: Inter and JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appDark: '#0b0f14',
+            panelDark: '#16202e',
+            panelBorder: '#233142',
+            accentCyan: '#06b6d4',
+            statusGreen: '#10b981',
+            statusAmber: '#f59e0b',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom CSS Styling -->
+<style data-purpose="custom-scrollbars">
+    /* Subtle custom scrollbars for the embedded webview */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #233142;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+  </style>
+<style data-purpose="visual-accents">
+    /* Glowing active pulse effect for cybersecurity telemetry */
+    @keyframes pulse-emerald {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+    .pulse-dot {
+      animation: pulse-emerald 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+<!-- END: Custom CSS Styling -->
+</head>
+<body class="bg-black text-slate-100 flex items-center justify-center min-h-screen p-0 sm:p-4 font-sans antialiased select-none">
+<!-- BEGIN: Phone Device Outer Mockup Frame -->
+<main class="w-full max-w-[420px] h-[100dvh] sm:h-[880px] bg-appDark border border-panelBorder sm:rounded-[36px] overflow-hidden flex flex-col relative shadow-2xl">
+<!-- BEGIN: Android System Status Bar -->
+<header class="w-full h-8 px-5 pt-2 flex justify-between items-center text-xs font-mono tracking-tight text-slate-400 z-30 bg-appDark" data-purpose="android-status-bar">
+<span class="font-medium text-slate-200">09:41</span>
+<div class="flex items-center space-x-2">
+<!-- Wi-Fi Icon -->
+<svg class="w-3.5 h-3.5 fill-current text-slate-300" viewbox="0 0 24 24">
+<path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4zm0 2.92c3.78 0 7.26 1.4 9.92 3.73L12 18.59 2.08 10.65C4.74 8.32 8.22 6.92 12 6.92z"></path>
+</svg>
+<!-- 5G Telemetry -->
+<span class="text-[11px] font-bold text-slate-300">5G</span>
+<!-- Battery Icon 100% -->
+<div class="flex items-center space-x-1">
+<div class="w-5 h-2.5 border border-slate-400 rounded-sm p-0.5 flex items-center">
+<div class="w-full h-full bg-statusGreen rounded-xs"></div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: Android System Status Bar -->
+<!-- BEGIN: Security App Main Header -->
+<section class="px-4 py-2 bg-appDark border-b border-panelBorder flex items-center justify-between z-20" data-purpose="security-app-header">
+<!-- Left: Logo & Brand Information -->
+<div class="flex items-center space-x-2.5">
+<img alt="Mobile Burp Security Target Shield Logo" class="w-7 h-7 rounded-md object-contain border border-panelBorder bg-panelDark" src="https://lh3.googleusercontent.com/aida/AEtjO1U5_4X9ArY1h2rkKEuMAfzVp8_lxPE5s5EytkunHhBqAXHA8jK0P-4v4I9I3agUGp5yjjj1wVJkAwxI_ZwvoPzQ7XioquTZXPWwl1SX8OkmMp7TWko9sLi5Lx_VsLVa2Hc4GfZFOkj5ULznB5e9MJjTZHDmOn7FGaYB3PboBDzNgy9hojjWTi0I12BZ4vDN__yZLdOFFXF9Uv_9F-sp8qindzr_8XYmjavn4B7dcenvSTRCaKDH5JxGypI"/>
+<div class="flex items-baseline space-x-1.5">
+<h1 class="text-sm font-semibold tracking-wide text-white font-mono">Mobile Burp</h1>
+<span class="text-[10px] px-1.5 py-0.5 rounded bg-panelDark text-accentCyan border border-cyan-900/50 font-mono">v1.2.4</span>
+</div>
+</div>
+<!-- Right: Proxy Status Telemetry Pill -->
+<div class="flex items-center space-x-1.5 bg-panelDark border border-panelBorder px-2.5 py-1 rounded-full text-xs font-mono shadow-inner">
+<span class="w-2 h-2 rounded-full bg-statusGreen pulse-dot"></span>
+<span class="text-statusGreen font-semibold text-[11px] tracking-tight">PROXY ON</span>
+<span class="text-slate-500 text-[11px]">:8080</span>
+</div>
+</section>
+<!-- END: Security App Main Header -->
+<!-- BEGIN: In-App Browser Navigation & URL Bar -->
+<section class="px-3 py-2 bg-[#101721] border-b border-panelBorder flex items-center space-x-2 z-20" data-purpose="browser-navigation-bar">
+<!-- URL Bar with Verified TLS Badge -->
+<div class="flex-1 flex items-center bg-panelDark border border-panelBorder hover:border-cyan-700/60 transition-colors rounded-lg px-2.5 py-1.5 text-xs font-mono shadow-sm">
+<!-- TLS Padlock Indicator -->
+<div class="flex items-center text-statusGreen mr-1.5 flex-shrink-0" title="TLS 1.3 Verified / Burp CA Installed">
+<svg class="w-3.5 h-3.5 fill-current" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" fill-rule="evenodd"></path>
+</svg>
+</div>
+<!-- URL Hierarchy Display -->
+<div class="flex-1 truncate text-left text-xs">
+<span class="text-white font-medium">example.com</span>
+<span class="text-slate-400">/store/products</span>
+</div>
+<!-- TLS Version Micro-Tag -->
+<div class="flex items-center ml-1">
+<span class="text-[9px] font-mono px-1 py-0.2 rounded bg-[#0b0f14] text-slate-400 border border-slate-700">TLS 1.3</span>
+</div>
+</div>
+</section>
+<!-- END: In-App Browser Navigation & URL Bar -->
+<!-- BEGIN: Android WebView Container (Fictional E-commerce App) -->
+<section class="flex-1 overflow-y-auto bg-[#0d1117] relative flex flex-col text-slate-200" data-purpose="webview-container">
+<!-- Storefront Web Header -->
+<header class="w-full bg-[#161b22] border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+<div class="flex items-center space-x-2">
+<div class="w-6 h-6 rounded bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-bold text-xs text-white">
+            E
+          </div>
+<span class="text-sm font-semibold tracking-tight text-white">Example Store</span>
+</div>
+<div class="flex items-center space-x-3">
+<!-- Search Icon Button -->
+<button aria-label="Search Store" class="text-slate-400 hover:text-white">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Shopping Bag Icon with Count (2) -->
+<div class="relative cursor-pointer">
+<svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="absolute -top-1.5 -right-2 bg-indigo-500 text-white font-mono text-[9px] px-1 rounded-full font-bold">2</span>
+</div>
+</div>
+</header>
+<!-- Store Promo Hero Banner -->
+<div class="m-3 p-3.5 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-800 relative overflow-hidden">
+<div class="absolute right-[-15px] top-[-15px] w-24 h-24 bg-cyan-500/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="relative z-0">
+<span class="text-[10px] font-semibold uppercase tracking-wider text-cyan-400 block mb-1">Spring Drop</span>
+<h2 class="text-base font-bold text-white tracking-tight">Curated Hardware Essentials</h2>
+<p class="text-xs text-slate-400 mt-1 mb-2">Engineered precision gear designed for modern workstations.</p>
+<span class="inline-block text-[11px] font-medium text-slate-200 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded">
+            Free shipping on orders over $50
+          </span>
+</div>
+</div>
+<!-- Store Product Catalog Grid (2-Column Responsive Layout) -->
+<div class="p-3 grid grid-cols-2 gap-3 pb-16">
+<!-- Product Card 1 -->
+<article class="bg-[#161b22] border border-slate-800 rounded-lg p-2.5 flex flex-col justify-between hover:border-slate-700 transition-colors">
+<div>
+<div class="w-full h-28 bg-[#21262d] rounded-md mb-2 flex items-center justify-center relative overflow-hidden">
+<svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="absolute top-1.5 left-1.5 bg-slate-900/80 backdrop-blur-xs text-[9px] font-mono text-slate-300 px-1 rounded border border-slate-700">TKL</span>
+</div>
+<h3 class="text-xs font-semibold text-white leading-tight">Mechanical Keyboard TKL</h3>
+<p class="text-[11px] text-slate-400 mt-0.5">Hot-swappable switches</p>
+</div>
+<div class="mt-2.5 flex items-center justify-between pt-1 border-t border-slate-800">
+<span class="text-xs font-mono font-bold text-white">$129.00</span>
+<button class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded text-[10px] font-medium transition-colors">
+              Add
+            </button>
+</div>
+</article>
+<!-- Product Card 2 -->
+<article class="bg-[#161b22] border border-slate-800 rounded-lg p-2.5 flex flex-col justify-between hover:border-slate-700 transition-colors">
+<div>
+<div class="w-full h-28 bg-[#21262d] rounded-md mb-2 flex items-center justify-center relative overflow-hidden">
+<svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="absolute top-1.5 left-1.5 bg-slate-900/80 backdrop-blur-xs text-[9px] font-mono text-emerald-400 px-1 rounded border border-emerald-900/50">FIDO2</span>
+</div>
+<h3 class="text-xs font-semibold text-white leading-tight">Hardware Security Key</h3>
+<p class="text-[11px] text-slate-400 mt-0.5">Dual USB-C &amp; NFC</p>
+</div>
+<div class="mt-2.5 flex items-center justify-between pt-1 border-t border-slate-800">
+<span class="text-xs font-mono font-bold text-white">$45.00</span>
+<button class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded text-[10px] font-medium transition-colors">
+              Add
+            </button>
+</div>
+</article>
+<!-- Product Card 3 -->
+<article class="bg-[#161b22] border border-slate-800 rounded-lg p-2.5 flex flex-col justify-between hover:border-slate-700 transition-colors">
+<div>
+<div class="w-full h-28 bg-[#21262d] rounded-md mb-2 flex items-center justify-center relative overflow-hidden">
+<svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h3 class="text-xs font-semibold text-white leading-tight">Noise Cancelling Headset</h3>
+<p class="text-[11px] text-slate-400 mt-0.5">40h battery, ANC hybrid</p>
+</div>
+<div class="mt-2.5 flex items-center justify-between pt-1 border-t border-slate-800">
+<span class="text-xs font-mono font-bold text-white">$199.00</span>
+<button class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded text-[10px] font-medium transition-colors">
+              Add
+            </button>
+</div>
+</article>
+<!-- Product Card 4 -->
+<article class="bg-[#161b22] border border-slate-800 rounded-lg p-2.5 flex flex-col justify-between hover:border-slate-700 transition-colors">
+<div>
+<div class="w-full h-28 bg-[#21262d] rounded-md mb-2 flex items-center justify-center relative overflow-hidden">
+<svg class="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24">
+<path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h3 class="text-xs font-semibold text-white leading-tight">Ergonomic Vertical Mouse</h3>
+<p class="text-[11px] text-slate-400 mt-0.5">4000 DPI laser sensor</p>
+</div>
+<div class="mt-2.5 flex items-center justify-between pt-1 border-t border-slate-800">
+<span class="text-xs font-mono font-bold text-white">$79.00</span>
+<button class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded text-[10px] font-medium transition-colors">
+              Add
+            </button>
+</div>
+</article>
+</div>
+<!-- BEGIN: Floating Telemetry Capture Status Pill -->
+<aside class="sticky bottom-3 self-center z-10 shadow-lg" data-purpose="floating-capture-status">
+<div class="flex items-center space-x-2 bg-panelDark/95 backdrop-blur border border-accentCyan/40 px-3.5 py-1.5 rounded-full text-xs font-mono text-slate-200 shadow-md">
+<span class="w-2 h-2 rounded-full bg-statusGreen pulse-dot"></span>
+<span>Capturing traffic</span>
+<span class="text-accentCyan font-medium">(128 reqs)</span>
+<span class="text-slate-500">|</span>
+<span class="text-slate-300">1.8 MB</span>
+</div>
+</aside>
+<!-- END: Floating Telemetry Capture Status Pill -->
+</section>
+<!-- END: Android WebView Container -->
+<!-- BEGIN: Bottom Browser Toolbar -->
+<nav class="w-full bg-appDark border-t border-panelBorder px-4 py-2 flex items-center justify-between z-20" data-purpose="browser-bottom-toolbar">
+<!-- Back Action -->
+<button aria-label="Back" class="p-2 text-slate-400 hover:text-white active:scale-95 transition-transform">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Forward Action -->
+<button aria-label="Forward" class="p-2 text-slate-600 cursor-not-allowed" disabled="">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Reload Action -->
+<button aria-label="Reload" class="p-2 text-slate-400 hover:text-accentCyan active:rotate-180 transition-transform duration-300">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+<!-- Traffic Button with Live Badge -->
+<button aria-label="Traffic Log" class="relative px-3 py-1.5 rounded-lg bg-panelDark border border-panelBorder hover:border-cyan-500/50 flex items-center space-x-1.5 group active:scale-95 transition-all">
+<svg class="w-4 h-4 text-accentCyan group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-xs font-mono font-medium text-slate-200">Traffic</span>
+<span class="bg-cyan-500/20 text-accentCyan border border-cyan-500/40 text-[10px] font-mono px-1.5 py-0.2 rounded-full font-semibold">128</span>
+</button>
+<!-- Options / More Menu -->
+<button aria-label="More Options" class="p-2 text-slate-400 hover:text-white active:scale-95 transition-transform">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</nav>
+<!-- END: Bottom Browser Toolbar -->
+<!-- BEGIN: Android System Gesture Pill -->
+<footer class="w-full h-4 bg-appDark flex justify-center items-center pb-1" data-purpose="android-gesture-pill">
+<div class="w-32 h-1 bg-slate-700 rounded-full"></div>
+</footer>
+<!-- END: Android System Gesture Pill -->
+</main>
+<!-- END: Phone Device Outer Mockup Frame -->
+</body></html>

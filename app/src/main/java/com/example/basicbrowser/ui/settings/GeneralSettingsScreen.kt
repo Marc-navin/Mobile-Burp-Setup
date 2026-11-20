@@ -1,6 +1,7 @@
 package com.example.basicbrowser.ui.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -17,6 +19,7 @@ import com.example.basicbrowser.filter.data.TrafficFilterRepository
 import com.example.basicbrowser.filter.model.InterceptFilterSettings
 import com.example.basicbrowser.proxy.tls.CertificateGenerator
 import com.example.basicbrowser.scope.data.ScopeRepository
+import com.example.basicbrowser.theme.*
 
 /**
  * General Settings Screen.
@@ -99,22 +102,24 @@ fun GeneralSettingsScreen(
                         Text(
                             text = "General Settings",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 20.sp,
+                            color = OnSurface
                         )
                         Text(
                             text = "Storage, Memory & App Preferences",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = OnSurfaceVariant
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = SurfaceContainerLowest
                 )
             )
         }
@@ -129,8 +134,9 @@ fun GeneralSettingsScreen(
         ) {
             if (actionNotice != null) {
                 Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = Primary.copy(alpha = 0.15f),
                     shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, Primary.copy(alpha = 0.3f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -141,11 +147,11 @@ fun GeneralSettingsScreen(
                         Text(
                             text = actionNotice!!,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = Primary,
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(onClick = { actionNotice = null }) {
-                            Text("Dismiss", fontSize = 12.sp)
+                            Text("Dismiss", fontSize = 12.sp, color = Primary)
                         }
                     }
                 }
@@ -155,8 +161,9 @@ fun GeneralSettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -164,7 +171,7 @@ fun GeneralSettingsScreen(
                         text = "Application Identity",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Primary
                     )
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -181,8 +188,9 @@ fun GeneralSettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -190,14 +198,14 @@ fun GeneralSettingsScreen(
                         text = "HTTP History & Memory Protection",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Primary
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         text = "History uses a fixed 200-transaction FIFO buffer with temporary disk body spillover to maintain strict memory bounds on Android.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = OnSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -222,8 +230,9 @@ fun GeneralSettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -231,14 +240,14 @@ fun GeneralSettingsScreen(
                         text = "Host Certificate Cache",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Primary
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         text = "Dynamically generated host certificates are cached in memory (LRU, max 50 entries) to speed up TLS handshakes for intercepted hosts.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = OnSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -264,8 +273,9 @@ fun GeneralSettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {

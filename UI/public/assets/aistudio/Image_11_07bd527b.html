@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "error-container": "#93000a", "on-background": "#e0e2ea", "surface-container": "#1c2025", "on-primary-container": "#00424f", "surface-container-highest": "#31353b", "on-secondary-fixed-variant": "#005236", "surface": "#101419", "on-surface": "#e0e2ea", "outline": "#869397", "on-secondary-container": "#00311f", "on-secondary-fixed": "#002113", "on-surface-variant": "#bcc9cd", "on-tertiary-fixed-variant": "#653e00", "inverse-surface": "#e0e2ea", "primary-container": "#06b6d4", "primary": "#4cd7f6", "tertiary-container": "#e79400", "surface-container-high": "#262a30", "surface-bright": "#36393f", "tertiary-fixed-dim": "#ffb95f", "secondary-fixed-dim": "#4edea3", "outline-variant": "#3d494c", "inverse-on-surface": "#2d3136", "secondary-container": "#00a572", "tertiary-fixed": "#ffddb8", "on-tertiary": "#472a00", "surface-tint": "#4cd7f6", "background": "#101419", "inverse-primary": "#00687a", "on-secondary": "#003824", "secondary": "#4edea3", "tertiary": "#ffb95f", "on-primary-fixed": "#001f26", "on-tertiary-container": "#563400", "primary-fixed": "acedff", "secondary-fixed": "#6ffbbe", "surface-container-lowest": "#0a0e13", "on-primary": "#003640", "surface-dim": "#101419", "on-primary-fixed-variant": "#004e5c", "surface-variant": "#31353b", "surface-container-low": "#181c21", "error": "#ffb4ab", "primary-fixed-dim": "#4cd7f6", "on-error": "#690005", "on-tertiary-fixed": "#2a1700", "on-error-container": "#ffdad6" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-lg": "0.75rem", "space-md": "0.5rem", "margin": "0.75rem", "space-xs": "0.25rem", "space-sm": "0.375rem", "gutter": "0.5rem", "space-xl": "1rem" }, fontFamily: { "label-md": ["Inter"], "code-lg": ["JetBrains Mono"], "headline-sm": ["Inter"], "code-md": ["JetBrains Mono"], "body-md": ["Inter"], "body-lg": ["Inter"], "body-sm": ["Inter"], "headline-lg": ["Inter"], "headline-md": ["Inter"], "label-sm": ["JetBrains Mono"], "code-sm": ["JetBrains Mono"] }, fontSize: { "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "code-lg": ["13px", { lineHeight: "19px", fontWeight: "400" }], "headline-sm": ["15px", { lineHeight: "20px", fontWeight: "600" }], "code-md": ["12px", { lineHeight: "17px", fontWeight: "400" }], "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }], "body-lg": ["14px", { lineHeight: "20px", fontWeight: "400" }], "body-sm": ["11px", { lineHeight: "15px", fontWeight: "400" }], "headline-lg": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "700" }], "headline-md": ["18px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "600" }], "label-sm": ["10px", { lineHeight: "13px", letterSpacing: "0.05em", fontWeight: "600" }], "code-sm": ["11px", { lineHeight: "15px", letterSpacing: "0.02em", fontWeight: "500" }] } } } };</script><style>body { min-height: max(884px, 100dvh); }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-background font-body-md text-body-md text-on-surface flex flex-col h-screen overflow-hidden select-none"><header class="fixed top-0 inset-x-0 z-50 bg-surface-container-lowest/90 backdrop-blur-xl pt-safe"><div class="h-16 px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Back" class="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-highest transition-colors flex-shrink-0 active:scale-95"><span class="material-symbols-outlined text-[22px]">arrow_back</span></button><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate tracking-tight">Intercept</span><span class="font-code-sm text-code-sm text-primary tracking-wider uppercase truncate">Mobile Burp</span></div></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-secondary/10 border border-secondary/20"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-code-sm text-code-sm text-secondary font-medium tracking-tight whitespace-nowrap">PROXY ON :8080</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-16 overflow-hidden bg-background"><div class="flex flex-col w-full h-[calc(100dvh-8rem)] overflow-hidden select-none">
+<!-- Top Paused & Queue Status Strip -->
+<div class="px-margin pt-space-xs pb-space-sm flex flex-col gap-space-xs flex-shrink-0">
+<!-- Intercept State Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-code-sm text-code-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+          Intercepting
+        </span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-code-sm text-code-sm">
+          HOLDING
+        </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-code-sm text-code-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">hourglass_top</span>
+<span>Queue: <strong class="text-on-surface">1 request</strong></span>
+</div>
+</div>
+<!-- Alert / Paused Banner Card -->
+<div class="bg-surface-container-low p-2.5 rounded-lg flex items-center justify-between gap-space-md shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-7 h-7 rounded-md bg-tertiary-container/30 flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">pause_circle</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-code-sm text-code-sm text-tertiary font-bold tracking-wider uppercase">Request Paused</span>
+<span class="text-tertiary-fixed-dim font-code-sm text-code-sm">• TLS 1.3</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Relay suspended. Modify headers/body or pass forward.</span>
+</div>
+</div>
+<span class="px-2 py-1 rounded bg-tertiary text-on-tertiary font-code-sm text-code-sm font-bold tracking-tight uppercase flex-shrink-0">
+        Active
+      </span>
+</div>
+</div>
+<!-- Intercepted Request Summary Bar -->
+<div class="px-margin pb-space-sm flex-shrink-0">
+<div class="bg-surface-container p-2.5 rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-code-sm text-code-sm font-bold tracking-wider">
+            POST
+          </span>
+<span class="font-code-md text-code-md text-on-surface font-semibold truncate">
+            /api/login
+          </span>
+</div>
+<span class="font-code-sm text-code-sm px-2 py-0.5 rounded bg-primary/10 text-primary font-medium tracking-wide flex-shrink-0">
+          #043
+        </span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-code-sm text-code-sm pt-0.5">
+<span class="truncate text-on-surface font-code-sm text-code-sm">example.com</span>
+<div class="flex items-center gap-space-xs flex-shrink-0">
+<span>184 B</span>
+<span>•</span>
+<span>10:42:31</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Primary Tab Segment (Request vs Pending Response) -->
+<div class="px-margin flex-shrink-0">
+<div class="grid grid-cols-2 p-1 bg-surface-container-lowest rounded-lg gap-1">
+<button class="py-1.5 px-3 rounded-md bg-surface-container-high text-primary font-headline-sm text-headline-sm flex items-center justify-center gap-1.5 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+<span>Request</span>
+</button>
+<button class="py-1.5 px-3 rounded-md text-on-surface-variant font-headline-sm text-headline-sm flex items-center justify-center gap-1.5 opacity-60" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_downward</span>
+<span>Response (0)</span>
+</button>
+</div>
+</div>
+<!-- Sub-tabs Horizontal Rail -->
+<div class="px-margin py-space-xs flex items-center gap-1.5 overflow-x-auto flex-shrink-0">
+<button class="px-2.5 py-1 rounded-md bg-primary text-on-primary font-code-sm text-code-sm font-semibold tracking-wide flex items-center gap-1 whitespace-nowrap shadow-sm" id="tab-headers" type="button">
+<span>Headers</span>
+<span class="w-4 h-4 rounded-full bg-on-primary/20 text-on-primary inline-flex items-center justify-center text-[9px]">6</span>
+</button>
+<button class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-code-sm text-code-sm whitespace-nowrap" id="tab-params" type="button">
+      Params (0)
+    </button>
+<button class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-code-sm text-code-sm whitespace-nowrap flex items-center gap-1" id="tab-body" type="button">
+<span>Body</span>
+<span class="text-primary">•</span>
+<span class="text-on-surface">JSON</span>
+</button>
+<button class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-code-sm text-code-sm whitespace-nowrap" id="tab-cookies" type="button">
+      Cookies (1)
+    </button>
+<button class="px-2.5 py-1 rounded-md bg-surface-container text-on-surface-variant font-code-sm text-code-sm whitespace-nowrap" id="tab-raw" type="button">
+      Raw HTTP
+    </button>
+</div>
+<!-- Scrollable Inspection Viewport -->
+<div class="flex-1 overflow-y-auto min-h-0 px-margin space-y-space-md pb-2">
+<!-- Headers Inspection Panel -->
+<div class="bg-surface-container-low rounded-xl p-space-sm space-y-space-xs">
+<div class="flex items-center justify-between px-space-xs pb-1">
+<span class="font-code-sm text-code-sm uppercase tracking-wider text-on-surface-variant font-semibold">Request Headers</span>
+<span class="font-code-sm text-code-sm text-primary">6 Entries</span>
+</div>
+<!-- Header Row: Host -->
+<div class="p-2 rounded-lg bg-surface-container flex flex-col gap-0.5">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary font-semibold">Host</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm uppercase">Authority</span>
+</div>
+<div class="font-code-md text-code-md text-on-surface break-all">example.com</div>
+</div>
+<!-- Header Row: Content-Type -->
+<div class="p-2 rounded-lg bg-surface-container flex flex-col gap-0.5">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary font-semibold">Content-Type</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm uppercase">Media</span>
+</div>
+<div class="font-code-md text-code-md text-on-surface break-all">application/json; charset=utf-8</div>
+</div>
+<!-- Header Row: User-Agent -->
+<div class="p-2 rounded-lg bg-surface-container flex flex-col gap-0.5">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary font-semibold">User-Agent</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm uppercase">Client</span>
+</div>
+<div class="font-code-md text-code-md text-on-surface break-all">Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) MobileBurp/2.1.0-sec</div>
+</div>
+<!-- Header Row: Accept -->
+<div class="p-2 rounded-lg bg-surface-container flex flex-col gap-0.5">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary font-semibold">Accept</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm uppercase">MIME</span>
+</div>
+<div class="font-code-md text-code-md text-on-surface break-all">application/json, text/plain, */*</div>
+</div>
+<!-- Header Row: Authorization -->
+<div class="p-2 rounded-lg bg-surface-container flex flex-col gap-0.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-[13px]">key</span>
+<span class="font-code-sm text-code-sm font-semibold">Authorization</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm uppercase">Bearer</span>
+</div>
+<div class="font-code-md text-code-md text-on-surface break-all">Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJtY2hlbiIs...</div>
+</div>
+<!-- Header Row: Cookie -->
+<div class="p-2 rounded-lg bg-surface-container flex flex-col gap-0.5">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-primary font-semibold">Cookie</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm uppercase">Storage</span>
+</div>
+<div class="font-code-md text-code-md text-on-surface break-all">session_token=sec_abc123490f82; device_id=and_91f42</div>
+</div>
+</div>
+<!-- JSON Body Editor Panel -->
+<div class="bg-surface-container-low rounded-xl p-space-sm space-y-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-code-sm text-code-sm uppercase tracking-wider text-on-surface font-semibold">Intercepted Payload</span>
+<span class="text-on-surface-variant font-code-sm text-code-sm">(application/json)</span>
+</div>
+<button class="px-2 py-0.5 rounded bg-surface-container-high text-primary hover:bg-surface-container-highest font-code-sm text-code-sm flex items-center gap-1" id="edit-payload-btn" type="button">
+<span class="material-symbols-outlined text-[13px]">edit</span>
+<span>Edit</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest rounded-lg p-2.5 font-code-md text-code-md relative overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<tbody>
+<tr class="align-top">
+<td class="w-6 text-on-surface-variant select-none opacity-50 pr-2">1</td>
+<td class="text-on-surface font-code-md text-code-md">{</td>
+</tr>
+<tr class="align-top">
+<td class="w-6 text-on-surface-variant select-none opacity-50 pr-2">2</td>
+<td class="text-on-surface font-code-md text-code-md pl-4">
+<span class="text-primary">"username"</span>: <span class="text-secondary">"marc"</span>,
+              </td>
+</tr>
+<tr class="align-top">
+<td class="w-6 text-on-surface-variant select-none opacity-50 pr-2">3</td>
+<td class="text-on-surface font-code-md text-code-md pl-4">
+<span class="text-primary">"password"</span>: <span class="text-secondary">"example123"</span>
+</td>
+</tr>
+<tr class="align-top">
+<td class="w-6 text-on-surface-variant select-none opacity-50 pr-2">4</td>
+<td class="text-on-surface font-code-md text-code-md">}</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="flex items-center gap-1.5 px-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+<span>Payload editable: any modification will be dispatched upon forward.</span>
+</div>
+</div>
+</div>
+<!-- Fixed Bottom Action Bar -->
+<div class="p-margin bg-surface-container-lowest flex items-center gap-space-sm flex-shrink-0 shadow-lg">
+<!-- Quick Modify Trigger -->
+<button aria-label="Modify Request" class="px-3 py-3 rounded-lg bg-surface-container text-primary font-headline-sm text-headline-sm flex items-center justify-center hover:bg-surface-container-high active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+</button>
+<!-- Drop Action -->
+<button class="px-4 py-3 rounded-lg bg-error-container text-on-error font-headline-sm text-headline-sm font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-transform" id="btn-drop" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+<span>DROP</span>
+</button>
+<!-- Forward Action (Dominant) -->
+<button class="flex-1 py-3 px-4 rounded-lg bg-primary text-on-primary font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform" id="btn-forward" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+<span>FORWARD</span>
+</button>
+</div>
+</div>
+<script>
+  (function() {
+    const forwardBtn = document.getElementById('btn-forward');
+    const dropBtn = document.getElementById('btn-drop');
+    const editBtn = document.getElementById('edit-payload-btn');
+
+    if (forwardBtn) {
+      forwardBtn.addEventListener('click', () => {
+        forwardBtn.classList.add('opacity-75');
+        forwardBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">sync</span><span>FORWARDING...</span>';
+        setTimeout(() => {
+          forwardBtn.classList.remove('opacity-75');
+          forwardBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check</span><span>FORWARDED</span>';
+          setTimeout(() => {
+            forwardBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">arrow_forward</span><span>FORWARD</span>';
+          }, 1200);
+        }, 500);
+      });
+    }
+
+    if (dropBtn) {
+      dropBtn.addEventListener('click', () => {
+        dropBtn.classList.add('opacity-60');
+        setTimeout(() => {
+          dropBtn.classList.remove('opacity-60');
+        }, 300);
+      });
+    }
+
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        const isEditing = editBtn.dataset.editing === 'true';
+        if (!isEditing) {
+          editBtn.dataset.editing = 'true';
+          editBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">save</span><span>Done</span>';
+        } else {
+          editBtn.dataset.editing = 'false';
+          editBtn.innerHTML = '<span class="material-symbols-outlined text-[13px]">edit</span><span>Edit</span>';
+        }
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.5)]" data-active-classes="text-primary"><div class="flex items-center justify-around h-16 px-space-xs"><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-space-xs gap-space-xs text-on-surface-variant hover:text-on-surface transition-colors" data-path="browser" href="#"><span class="material-symbols-outlined text-[20px]">public</span><span class="font-label-sm text-label-sm">Browser</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-space-xs gap-space-xs text-on-surface-variant hover:text-on-surface transition-colors" data-path="traffic" href="#"><span class="material-symbols-outlined text-[20px]">swap_calls</span><span class="font-label-sm text-label-sm">Traffic</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-space-xs gap-space-xs transition-colors text-primary" data-path="intercept" href="#"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">pause_circle</span><span class="font-label-sm text-label-sm font-semibold">Intercept</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-space-xs gap-space-xs text-on-surface-variant hover:text-on-surface transition-colors" data-path="repeater" href="#"><span class="material-symbols-outlined text-[20px]">repeat</span><span class="font-label-sm text-label-sm">Repeater</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[44px] py-space-xs gap-space-xs text-on-surface-variant hover:text-on-surface transition-colors" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span class="font-label-sm text-label-sm">Settings</span></a></div></nav></body></html>

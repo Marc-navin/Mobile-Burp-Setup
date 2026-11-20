@@ -1,6 +1,7 @@
 package com.example.basicbrowser.scope.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,13 +12,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
+import com.example.basicbrowser.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.basicbrowser.scope.data.ScopeRepository
 import com.example.basicbrowser.scope.model.ScopeRule
 import com.example.basicbrowser.scope.model.ScopeRuleType
+import com.example.basicbrowser.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,11 +94,18 @@ fun ScopeScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🎯 Target Scope", fontWeight = FontWeight.Bold)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_scope_target),
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Target Scope", fontWeight = FontWeight.Bold, color = OnSurface)
                         Spacer(modifier = Modifier.width(8.dp))
                         val totalEnabled = rules.count { it.enabled }
                         Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
+                            color = Primary.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
@@ -102,14 +113,14 @@ fun ScopeScreen(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = Primary
                             )
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
                     }
                 },
                 actions = {
@@ -118,14 +129,17 @@ fun ScopeScreen(
                             Text("Clear", color = MaterialTheme.colorScheme.error)
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = SurfaceContainerLowest
+                )
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = Primary,
+                contentColor = OnPrimary
             ) {
                 Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
@@ -142,8 +156,9 @@ fun ScopeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                    containerColor = SurfaceContainerLow
+                ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
@@ -191,7 +206,11 @@ fun ScopeScreen(
             }
 
             // Tabs for Include vs Exclude
-            TabRow(selectedTabIndex = selectedTab) {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = SurfaceContainerLowest,
+                contentColor = Primary
+            ) {
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
@@ -270,13 +289,10 @@ fun ScopeRuleCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (rule.enabled) {
-                MaterialTheme.colorScheme.surface
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            }
+            containerColor = if (rule.enabled) SurfaceContainerLow else SurfaceContainerLowest
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        border = BorderStroke(1.dp, if (rule.enabled) SurfaceContainerHigh else SurfaceContainer),
+        shape = RoundedCornerShape(10.dp)
     ) {
         Row(
             modifier = Modifier
@@ -332,11 +348,21 @@ fun ScopeRuleCard(
             )
 
             IconButton(onClick = onEdit) {
-                Text("✏️", fontSize = 14.sp)
+                Icon(
+                    painter = painterResource(R.drawable.ic_action_edit),
+                    contentDescription = "Edit",
+                    tint = OnSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
             }
 
             IconButton(onClick = onDelete) {
-                Text("✕", fontSize = 16.sp, color = MaterialTheme.colorScheme.error)
+                Icon(
+                    painter = painterResource(R.drawable.ic_action_close),
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
     }

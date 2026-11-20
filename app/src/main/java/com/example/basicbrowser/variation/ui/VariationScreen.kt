@@ -3,6 +3,7 @@ package com.example.basicbrowser.variation.ui
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,14 +16,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import com.example.basicbrowser.R
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import com.example.basicbrowser.proxy.intercept.HttpRequestData
 import com.example.basicbrowser.variation.data.VariationRepository
 import com.example.basicbrowser.variation.engine.IntruderRequestGenerator
+import com.example.basicbrowser.variation.engine.RawHttpConverter
 import com.example.basicbrowser.variation.model.AttackType
 import com.example.basicbrowser.variation.model.InsertionPoint
 import com.example.basicbrowser.variation.model.MarkerLocation
@@ -45,21 +53,16 @@ fun VariationScreen(
     val jobState by repository.jobState.collectAsState()
     val results by repository.results.collectAsState()
     val baseRequest by repository.baseRequest.collectAsState()
+    val rawTemplateState by repository.rawTemplate.collectAsState()
+    val repoScheme by repository.targetScheme.collectAsState()
+    val repoPort by repository.targetPort.collectAsState()
     val persistedAttackType by repository.selectedAttackType.collectAsState()
 
-    // Form inputs initialized from repository's baseRequest
-    var method by remember(baseRequest) { mutableStateOf(baseRequest?.method ?: "GET") }
-    var url by remember(baseRequest) { mutableStateOf(baseRequest?.url ?: "https://example.com/api?id=§1§") }
-    var headersText by remember(baseRequest) {
-        mutableStateOf(
-            baseRequest?.headers?.joinToString("\n") ?: "Accept: */*\nUser-Agent: BasicBrowser/1.0"
-        )
+    var rawHttpValue by remember(rawTemplateState) {
+        mutableStateOf(TextFieldValue(rawTemplateState))
     }
-    var bodyText by remember(baseRequest) {
-        mutableStateOf(
-            baseRequest?.body?.let { String(it, StandardCharsets.UTF_8) } ?: ""
-        )
-    }
+    var targetScheme by remember(repoScheme) { mutableStateOf(repoScheme) }
+    var targetPortText by remember(repoPort) { mutableStateOf(repoPort.toString()) }
 
     // Attack Type state (persisted across tab switches and runs)
     var attackType by remember(persistedAttackType) { mutableStateOf(persistedAttackType) }
@@ -93,16 +96,36 @@ fun VariationScreen(
         }
     }
 
-    // Construct live request representation for insertion-point detection
-    val currentRequest = remember(method, url, headersText, bodyText) {
-        val headersList = headersText.lines().map { it.trim() }.filter { it.isNotEmpty() }
-        val bodyBytes = if (bodyText.isNotEmpty()) bodyText.toByteArray(StandardCharsets.UTF_8) else null
-        HttpRequestData(
-            method = method.trim().uppercase(),
-            url = url.trim(),
-            headers = headersList,
-            body = bodyBytes
+    // Parse raw HTTP
+    val parsedRaw = remember(rawHttpValue.text, targetScheme, targetPortText) {
+        RawHttpConverter.parseRawHttp(
+            rawText = rawHttpValue.text,
+            defaultScheme = targetScheme,
+            defaultPort = targetPortText.toIntOrNull()
         )
+    }
+
+    // Construct live request representation for insertion-point detection & execution
+    val currentRequest = remember(parsedRaw, targetScheme, targetPortText) {
+        if (parsedRaw.isValid) {
+            try {
+                RawHttpConverter.toHttpRequestData(parsedRaw)
+            } catch (_: Exception) {
+                HttpRequestData(
+                    method = parsedRaw.method.ifBlank { "GET" },
+                    url = "${targetScheme}://${parsedRaw.target?.host ?: "example.com"}:${targetPortText}${parsedRaw.pathAndQuery}",
+                    headers = parsedRaw.headers,
+                    body = parsedRaw.body
+                )
+            }
+        } else {
+            HttpRequestData(
+                method = parsedRaw.method.ifBlank { "GET" },
+                url = "${targetScheme}://${parsedRaw.target?.host ?: "example.com"}:${targetPortText}${parsedRaw.pathAndQuery}",
+                headers = parsedRaw.headers,
+                body = parsedRaw.body
+            )
+        }
     }
 
     val detectedInsertionPoints = remember(currentRequest) {
@@ -127,7 +150,9 @@ fun VariationScreen(
             attackType = attackType,
             insertionPoints = detectedInsertionPoints,
             sniperPayloads = parsedSniperPayloads,
-            clusterBombPayloads = parsedClusterBombPayloads
+            clusterBombPayloads = parsedClusterBombPayloads,
+            batteringRamPayloads = parsedSniperPayloads,
+            pitchforkPayloads = parsedClusterBombPayloads
         )
     }
 
@@ -136,7 +161,12 @@ fun VariationScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🧪", fontSize = 18.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_lab),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Variation Lab",
@@ -185,44 +215,40 @@ fun VariationScreen(
                             attackType = it
                             repository.setAttackType(it)
                         },
-                        method = method,
-                        onMethodChange = { method = it },
-                        url = url,
-                        onUrlChange = { url = it },
-                        headersText = headersText,
-                        onHeadersChange = { headersText = it },
-                        bodyText = bodyText,
-                        onBodyChange = { bodyText = it },
+                        rawHttpValue = rawHttpValue,
+                        onRawHttpValueChange = { rawHttpValue = it },
+                        targetScheme = targetScheme,
+                        onTargetSchemeChange = {
+                            targetScheme = it
+                            repository.setTargetMetadata(it, targetPortText.toIntOrNull() ?: if (it == "https") 443 else 80)
+                        },
+                        targetPortText = targetPortText,
+                        onTargetPortTextChange = {
+                            targetPortText = it
+                            it.toIntOrNull()?.let { p -> repository.setTargetMetadata(targetScheme, p) }
+                        },
                         insertionPoints = detectedInsertionPoints,
                         onRemoveInsertionPoint = { targetIndex ->
-                            val updatedReq = IntruderRequestGenerator.removeMarker(currentRequest, targetIndex)
-                            url = updatedReq.url
-                            headersText = updatedReq.headers.joinToString("\n")
-                            bodyText = updatedReq.body?.let { String(it, StandardCharsets.UTF_8) } ?: ""
+                            val updatedText = RawHttpConverter.removeMarkerAtIndex(rawHttpValue.text, targetIndex)
+                            rawHttpValue = TextFieldValue(text = updatedText, selection = TextRange(updatedText.length))
                         },
                         onClearAllMarkers = {
-                            val updatedReq = IntruderRequestGenerator.clearAllMarkers(currentRequest)
-                            url = updatedReq.url
-                            headersText = updatedReq.headers.joinToString("\n")
-                            bodyText = updatedReq.body?.let { String(it, StandardCharsets.UTF_8) } ?: ""
+                            val updatedText = RawHttpConverter.clearMarkers(rawHttpValue.text)
+                            rawHttpValue = TextFieldValue(text = updatedText, selection = TextRange(updatedText.length))
                         },
-                        onAddMarkerToUrl = {
-                            // If URL has query params without §, wrap the first one; otherwise append §1§
-                            url = if (url.contains("=") && !url.contains("§")) {
-                                url.replaceFirst("=([^&§]+)".toRegex(), "=§$1§")
-                            } else {
-                                "$url§1§"
-                            }
+                        onAddMarker = {
+                            val sel = rawHttpValue.selection
+                            val (newText, newRange) = RawHttpConverter.addMarker(rawHttpValue.text, sel.start, sel.end)
+                            rawHttpValue = TextFieldValue(
+                                text = newText,
+                                selection = TextRange(newRange.first, newRange.last)
+                            )
                         },
-                        onAddMarkerToBody = {
-                            bodyText = if (bodyText.isEmpty()) {
-                                "{\"id\": §1§}"
-                            } else if (!bodyText.contains("§")) {
-                                bodyText.replaceFirst(": \"?([^\"{},\\s]+)\"?".toRegex(), ": §$1§")
-                            } else {
-                                "$bodyText§marker§"
-                            }
+                        onAutoDetectMarkers = {
+                            val auto = RawHttpConverter.autoDetectMarkers(rawHttpValue.text)
+                            rawHttpValue = TextFieldValue(text = auto, selection = TextRange(auto.length))
                         },
+                        validationErrors = parsedRaw.validationErrors,
                         sniperPayloadsText = sniperPayloadsText,
                         onSniperPayloadsChange = { sniperPayloadsText = it },
                         clusterBombPayloadsMap = clusterBombPayloadsMap,
@@ -234,13 +260,20 @@ fun VariationScreen(
                         onDelayChange = { delayMs = it },
                         isBusy = jobState is VariationJobState.Running || jobState is VariationJobState.Paused,
                         onPrepareRun = {
+                            if (!parsedRaw.isValid) {
+                                Toast.makeText(context, parsedRaw.validationErrors.firstOrNull() ?: "Invalid request syntax", Toast.LENGTH_LONG).show()
+                                return@ConfigTab
+                            }
                             try {
                                 val config = VariationConfig(
                                     baseRequest = currentRequest,
                                     attackType = attackType,
                                     sniperPayloads = parsedSniperPayloads,
                                     clusterBombPayloads = parsedClusterBombPayloads,
-                                    delayMs = delayMs
+                                    batteringRamPayloads = parsedSniperPayloads,
+                                    pitchforkPayloads = parsedClusterBombPayloads,
+                                    delayMs = delayMs,
+                                    rawTemplate = rawHttpValue.text
                                 )
                                 repository.requestAuthorization(config)
                             } catch (e: Exception) {
@@ -279,19 +312,18 @@ fun VariationScreen(
 private fun ConfigTab(
     attackType: AttackType,
     onAttackTypeChange: (AttackType) -> Unit,
-    method: String,
-    onMethodChange: (String) -> Unit,
-    url: String,
-    onUrlChange: (String) -> Unit,
-    headersText: String,
-    onHeadersChange: (String) -> Unit,
-    bodyText: String,
-    onBodyChange: (String) -> Unit,
+    rawHttpValue: TextFieldValue,
+    onRawHttpValueChange: (TextFieldValue) -> Unit,
+    targetScheme: String,
+    onTargetSchemeChange: (String) -> Unit,
+    targetPortText: String,
+    onTargetPortTextChange: (String) -> Unit,
     insertionPoints: List<InsertionPoint>,
     onRemoveInsertionPoint: (Int) -> Unit,
     onClearAllMarkers: () -> Unit,
-    onAddMarkerToUrl: () -> Unit,
-    onAddMarkerToBody: () -> Unit,
+    onAddMarker: () -> Unit,
+    onAutoDetectMarkers: () -> Unit,
+    validationErrors: List<String>,
     sniperPayloadsText: String,
     onSniperPayloadsChange: (String) -> Unit,
     clusterBombPayloadsMap: Map<String, String>,
@@ -339,83 +371,152 @@ private fun ConfigTab(
             }
         }
 
-        // 2. Base Request Section Card
+        // 2. Unified Raw HTTP Request Editor Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Base Request Template", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Raw HTTP Request Editor", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = method,
-                        onValueChange = onMethodChange,
-                        label = { Text("Method") },
-                        modifier = Modifier.width(100.dp),
-                        singleLine = true,
-                        enabled = !isBusy
-                    )
-                    OutlinedTextField(
-                        value = url,
-                        onValueChange = onUrlChange,
-                        label = { Text("Target URL (supports §marker§)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        enabled = !isBusy
-                    )
+                    // Target Scheme & Port Row
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilterChip(
+                            selected = targetScheme.equals("https", ignoreCase = true),
+                            onClick = { onTargetSchemeChange("https") },
+                            label = { Text("HTTPS", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            enabled = !isBusy
+                        )
+                        FilterChip(
+                            selected = targetScheme.equals("http", ignoreCase = true),
+                            onClick = { onTargetSchemeChange("http") },
+                            label = { Text("HTTP", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                            enabled = !isBusy
+                        )
+                        OutlinedTextField(
+                            value = targetPortText,
+                            onValueChange = onTargetPortTextChange,
+                            label = { Text("Port", fontSize = 10.sp) },
+                            modifier = Modifier.width(72.dp),
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(fontSize = 11.sp, fontFamily = FontFamily.Monospace),
+                            enabled = !isBusy
+                        )
+                    }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Marker Controls Toolbar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     FilledTonalButton(
-                        onClick = onAddMarkerToUrl,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                        modifier = Modifier.height(30.dp),
+                        onClick = onAddMarker,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(32.dp),
                         enabled = !isBusy
                     ) {
-                        Text("+ § in URL", fontSize = 11.sp)
+                        Text("Add §", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    FilledTonalButton(
-                        onClick = onAddMarkerToBody,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                        modifier = Modifier.height(30.dp),
+                    OutlinedButton(
+                        onClick = onClearAllMarkers,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(32.dp),
+                        enabled = !isBusy && insertionPoints.isNotEmpty()
+                    ) {
+                        Text("Clear §", fontSize = 12.sp)
+                    }
+
+                    OutlinedButton(
+                        onClick = onAutoDetectMarkers,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(32.dp),
                         enabled = !isBusy
                     ) {
-                        Text("+ § in Body", fontSize = 11.sp)
+                        Text("Auto §", fontSize = 12.sp)
                     }
 
-                    if (insertionPoints.isNotEmpty()) {
-                        OutlinedButton(
-                            onClick = onClearAllMarkers,
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier.height(30.dp),
-                            enabled = !isBusy
-                        ) {
-                            Text("Clear §", fontSize = 11.sp)
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Surface(
+                        color = if (validationErrors.isNotEmpty()) {
+                            MaterialTheme.colorScheme.errorContainer
+                        } else if (insertionPoints.isNotEmpty()) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = if (validationErrors.isNotEmpty()) {
+                                "Syntax Error"
+                            } else {
+                                "${insertionPoints.size} § marker${if (insertionPoints.size == 1) "" else "s"}"
+                            },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (validationErrors.isNotEmpty()) {
+                                MaterialTheme.colorScheme.error
+                            } else if (insertionPoints.isNotEmpty()) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+
+                // Validation Errors Banner
+                if (validationErrors.isNotEmpty()) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            validationErrors.forEach { err ->
+                                Text(
+                                    text = "• $err",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }
 
+                // Unified Monospace Raw HTTP Request Editor
                 OutlinedTextField(
-                    value = headersText,
-                    onValueChange = onHeadersChange,
-                    label = { Text("Headers (one per line, supports §marker§)") },
+                    value = rawHttpValue,
+                    onValueChange = onRawHttpValueChange,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(105.dp),
-                    textStyle = LocalTextStyle.current.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
-                    enabled = !isBusy
-                )
-
-                OutlinedTextField(
-                    value = bodyText,
-                    onValueChange = onBodyChange,
-                    label = { Text("Request Body (supports §marker§)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(95.dp),
-                    textStyle = LocalTextStyle.current.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
+                        .height(260.dp),
+                    textStyle = LocalTextStyle.current.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    ),
+                    placeholder = {
+                        Text(
+                            "POST /api/login HTTP/1.1\nHost: example.com\nContent-Type: application/json\n\n{\"username\":\"§admin§\"}",
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp
+                        )
+                    },
                     enabled = !isBusy
                 )
             }
@@ -508,137 +609,150 @@ private fun ConfigTab(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                when (attackType) {
-                    AttackType.SNIPER -> {
-                        val sniperCount = sniperPayloadsText.lines().filter { it.trim().isNotEmpty() }.size
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Sniper Payloads (Shared)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text("$sniperCount values", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        }
-
+                if (attackType.isSinglePayloadSet) {
+                    val count = sniperPayloadsText.lines().filter { it.trim().isNotEmpty() }.size
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Tested individually on all ${insertionPoints.size} positions (${insertionPoints.size} × $sniperCount = ${insertionPoints.size * sniperCount} requests)",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = if (attackType == AttackType.BATTERING_RAM) "Battering Ram Payloads (Shared)" else "Sniper Payloads (Shared)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
                         )
-
-                        OutlinedTextField(
-                            value = sniperPayloadsText,
-                            onValueChange = onSniperPayloadsChange,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            textStyle = LocalTextStyle.current.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
-                            placeholder = { Text("1\n2\n3\nadmin\nguest") },
-                            enabled = !isBusy
-                        )
-
-                        // Quick presets
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            AssistChip(
-                                onClick = { onSniperPayloadsChange((1..10).joinToString("\n")) },
-                                label = { Text("1..10", fontSize = 11.sp) },
-                                enabled = !isBusy
-                            )
-                            AssistChip(
-                                onClick = { onSniperPayloadsChange(listOf("admin", "test", "guest", "user", "root").joinToString("\n")) },
-                                label = { Text("Users", fontSize = 11.sp) },
-                                enabled = !isBusy
-                            )
-                            AssistChip(
-                                onClick = { onSniperPayloadsChange(listOf("' OR '1'='1", "admin' --", "1 UNION SELECT 1").joinToString("\n")) },
-                                label = { Text("SQLi", fontSize = 11.sp) },
-                                enabled = !isBusy
-                            )
-                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text("$count values", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
 
-                    AttackType.CLUSTER_BOMB -> {
-                        Text("Cluster Bomb Payloads (Per Insertion Point)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text(
-                            text = "Every insertion point has its own payload list. All Cartesian combinations will be generated.",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        if (insertionPoints.isEmpty()) {
-                            Text(
-                                "No insertion points marked. Add markers first.",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                    Text(
+                        text = if (attackType == AttackType.BATTERING_RAM) {
+                            "The same payload is inserted simultaneously into all ${insertionPoints.size} positions ($count payloads = $count requests)."
                         } else {
-                            var selectedPosIndex by remember { mutableIntStateOf(0) }
-                            if (selectedPosIndex >= insertionPoints.size) {
-                                selectedPosIndex = 0
+                            "Tested individually on each of the ${insertionPoints.size} positions (${insertionPoints.size} × $count = ${insertionPoints.size * count} requests)."
+                        },
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = sniperPayloadsText,
+                        onValueChange = onSniperPayloadsChange,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        textStyle = LocalTextStyle.current.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
+                        placeholder = { Text("1\n2\n3\nadmin\nguest") },
+                        enabled = !isBusy
+                    )
+
+                    // Quick presets
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AssistChip(
+                            onClick = { onSniperPayloadsChange((1..10).joinToString("\n")) },
+                            label = { Text("1..10", fontSize = 11.sp) },
+                            enabled = !isBusy
+                        )
+                        AssistChip(
+                            onClick = { onSniperPayloadsChange(listOf("admin", "test", "guest", "user", "root").joinToString("\n")) },
+                            label = { Text("Users", fontSize = 11.sp) },
+                            enabled = !isBusy
+                        )
+                        AssistChip(
+                            onClick = { onSniperPayloadsChange(listOf("' OR '1'='1", "admin' --", "1 UNION SELECT 1").joinToString("\n")) },
+                            label = { Text("SQLi", fontSize = 11.sp) },
+                            enabled = !isBusy
+                        )
+                    }
+                } else {
+                    val isPitchfork = attackType == AttackType.PITCHFORK
+                    Text(
+                        text = if (isPitchfork) "Pitchfork Payloads (Lockstep Per Position)" else "Cluster Bomb Payloads (Cartesian Product)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = if (isPitchfork) {
+                            "Each position has its own payload set. Sets advance in lockstep and stop at the shortest set."
+                        } else {
+                            "Each position has its own payload set. Every combination (Cartesian product) across all positions will be tested."
+                        },
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (insertionPoints.isEmpty()) {
+                        Text(
+                            "No insertion points marked. Add §markers§ in the raw request first.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        var selectedPosIndex by remember { mutableIntStateOf(0) }
+                        if (selectedPosIndex >= insertionPoints.size) {
+                            selectedPosIndex = 0
+                        }
+
+                        // Sub-tabs for each insertion point
+                        ScrollableTabRow(
+                            selectedTabIndex = selectedPosIndex,
+                            edgePadding = 0.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            insertionPoints.forEachIndexed { idx, ip ->
+                                val count = (clusterBombPayloadsMap[ip.id] ?: "${ip.baselineValue}\ntest")
+                                    .lines().filter { it.trim().isNotEmpty() }.size
+                                Tab(
+                                    selected = selectedPosIndex == idx,
+                                    onClick = { selectedPosIndex = idx },
+                                    text = {
+                                        Text(
+                                            "#${idx + 1} (${ip.baselineValue.take(8)}: $count)",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                )
+                            }
+                        }
+
+                        val activeIp = insertionPoints[selectedPosIndex]
+                        val currentText = clusterBombPayloadsMap[activeIp.id] ?: "${activeIp.baselineValue}\ntest"
+
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "Payloads for Position #${activeIp.index + 1} (${activeIp.description}):",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                val pCount = currentText.lines().filter { it.trim().isNotEmpty() }.size
+                                Text("$pCount items", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                             }
 
-                            // Sub-tabs for each insertion point
-                            ScrollableTabRow(
-                                selectedTabIndex = selectedPosIndex,
-                                edgePadding = 0.dp,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                insertionPoints.forEachIndexed { idx, ip ->
-                                    val count = (clusterBombPayloadsMap[ip.id] ?: "${ip.baselineValue}\ntest")
-                                        .lines().filter { it.trim().isNotEmpty() }.size
-                                    Tab(
-                                        selected = selectedPosIndex == idx,
-                                        onClick = { selectedPosIndex = idx },
-                                        text = {
-                                            Text(
-                                                "#${idx + 1} (${ip.location.name}: $count)",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                        }
-                                    )
-                                }
-                            }
+                            OutlinedTextField(
+                                value = currentText,
+                                onValueChange = { onClusterBombPayloadsChange(activeIp.id, it) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(110.dp),
+                                textStyle = LocalTextStyle.current.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
+                                enabled = !isBusy
+                            )
 
-                            val activeIp = insertionPoints[selectedPosIndex]
-                            val currentText = clusterBombPayloadsMap[activeIp.id] ?: "${activeIp.baselineValue}\ntest"
-
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "Payloads for Position #${activeIp.index + 1} (${activeIp.description}):",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    val pCount = currentText.lines().filter { it.trim().isNotEmpty() }.size
-                                    Text("$pCount items", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                                }
-
-                                OutlinedTextField(
-                                    value = currentText,
-                                    onValueChange = { onClusterBombPayloadsChange(activeIp.id, it) },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(110.dp),
-                                    textStyle = LocalTextStyle.current.copy(fontFamily = FontFamily.Monospace, fontSize = 12.sp),
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AssistChip(
+                                    onClick = { onClusterBombPayloadsChange(activeIp.id, (1..5).joinToString("\n")) },
+                                    label = { Text("1..5", fontSize = 10.sp) },
                                     enabled = !isBusy
                                 )
-
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    AssistChip(
-                                        onClick = { onClusterBombPayloadsChange(activeIp.id, (1..5).joinToString("\n")) },
-                                        label = { Text("1..5", fontSize = 10.sp) },
-                                        enabled = !isBusy
-                                    )
-                                    AssistChip(
-                                        onClick = { onClusterBombPayloadsChange(activeIp.id, listOf("admin", "user", "root").joinToString("\n")) },
-                                        label = { Text("Users", fontSize = 10.sp) },
-                                        enabled = !isBusy
-                                    )
-                                    AssistChip(
-                                        onClick = { onClusterBombPayloadsChange(activeIp.id, listOf("true", "false").joinToString("\n")) },
-                                        label = { Text("Booleans", fontSize = 10.sp) },
-                                        enabled = !isBusy
-                                    )
-                                }
+                                AssistChip(
+                                    onClick = { onClusterBombPayloadsChange(activeIp.id, listOf("admin", "user", "root").joinToString("\n")) },
+                                    label = { Text("Users", fontSize = 10.sp) },
+                                    enabled = !isBusy
+                                )
+                                AssistChip(
+                                    onClick = { onClusterBombPayloadsChange(activeIp.id, listOf("true", "false").joinToString("\n")) },
+                                    label = { Text("Booleans", fontSize = 10.sp) },
+                                    enabled = !isBusy
+                                )
                             }
                         }
                     }
@@ -724,7 +838,7 @@ private fun ConfigTab(
         }
 
         // Action Button: Prepare & Confirm Run
-        val isExecutionPermitted = !isBusy && calculatedRequestCount in 1..VariationConfig.HARD_CAP_MAX_REQUESTS
+        val isExecutionPermitted = !isBusy && validationErrors.isEmpty() && calculatedRequestCount in 1..VariationConfig.HARD_CAP_MAX_REQUESTS
         Button(
             onClick = onPrepareRun,
             modifier = Modifier
@@ -733,7 +847,13 @@ private fun ConfigTab(
             enabled = isExecutionPermitted
         ) {
             Text(
-                text = if (isExecutionPermitted) "🚀 Prepare & Confirm Run ($calculatedRequestCount reqs)" else "🚀 Cannot Run (Exceeds 500 or Empty)",
+                text = if (isExecutionPermitted) {
+                    "Prepare & Confirm Run ($calculatedRequestCount reqs)"
+                } else if (validationErrors.isNotEmpty()) {
+                    "Cannot Run (Fix Syntax Errors)"
+                } else {
+                    "Cannot Run (Exceeds 500 or Empty)"
+                },
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
@@ -751,6 +871,8 @@ private fun ResultsTab(
     onStop: () -> Unit,
     onEditConfig: () -> Unit
 ) {
+    var selectedResult by remember { mutableStateOf<VariationResult?>(null) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         // Control Bar
         Surface(
@@ -876,11 +998,18 @@ private fun ResultsTab(
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(results, key = { it.index }) { item ->
-                    ResultRow(item = item)
+                    ResultRow(item = item, onClick = { selectedResult = item })
                     HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }
+    }
+
+    selectedResult?.let { res ->
+        ResultDetailDialog(
+            result = res,
+            onDismiss = { selectedResult = null }
+        )
     }
 }
 
@@ -890,10 +1019,14 @@ private fun TableHeaderText(text: String, width: androidx.compose.ui.unit.Dp) {
 }
 
 @Composable
-private fun ResultRow(item: VariationResult) {
+private fun ResultRow(
+    item: VariationResult,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -934,6 +1067,238 @@ private fun ResultRow(item: VariationResult) {
         Text(text = sizeStr, modifier = Modifier.width(60.dp), fontSize = 11.sp)
         Text(text = "${item.elapsedTimeMs}ms", modifier = Modifier.width(50.dp), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+@Composable
+private fun ResultDetailDialog(
+    result: VariationResult,
+    onDismiss: () -> Unit
+) {
+    val clipboardManager = LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Request #${result.index}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = result.attackType.displayName,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Key Metrics Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Status
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text("STATUS", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline, fontWeight = FontWeight.Bold)
+                            if (result.statusCode != null) {
+                                val color = when (result.statusCode / 100) {
+                                    2 -> Color(0xFF2E7D32)
+                                    3 -> Color(0xFF1565C0)
+                                    4 -> Color(0xFFE65100)
+                                    else -> Color(0xFFC62828)
+                                }
+                                Text("${result.statusCode}", color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            } else {
+                                Text("ERROR", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
+                        }
+                    }
+
+                    // Size
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text("SIZE", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline, fontWeight = FontWeight.Bold)
+                            val sizeStr = if (result.isTruncated) "${formatBytes(result.responseSizeBytes)} [trunc]" else formatBytes(result.responseSizeBytes)
+                            Text(sizeStr, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                    }
+
+                    // Time
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text("TIME", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline, fontWeight = FontWeight.Bold)
+                            Text("${result.elapsedTimeMs} ms", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                    }
+                }
+
+                if (result.errorMessage != null) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = result.errorMessage,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+
+                // Position to Payload Breakdown
+                Text("Position-to-Payload Mapping", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                if (result.attackType == AttackType.BATTERING_RAM) {
+                    Text(
+                        "Battering Ram applies the exact same payload simultaneously to all marked positions.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+
+                if (result.positionPayloads.isNotEmpty()) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            result.positionPayloads.forEach { (pos, payloadVal) ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = pos,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = payloadVal,
+                                            fontSize = 11.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Payload:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Text(result.payload, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+                }
+
+                // Generated Raw Request
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Generated Raw Request", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    val rawText = result.rawRequestText
+                    if (rawText != null) {
+                        OutlinedButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(rawText))
+                                copied = true
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(30.dp)
+                        ) {
+                            Text(if (copied) "Copied!" else "Copy Request", fontSize = 11.sp)
+                        }
+                    }
+                }
+
+                val wireReq = result.rawRequestText
+                if (wireReq != null) {
+                    Surface(
+                        color = Color(0xFF1E1E1E),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 240.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = wireReq,
+                                color = Color(0xFFD4D4D4),
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        "Raw request text not available.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
 
 @Composable
@@ -1012,6 +1377,25 @@ private fun ConfirmationDialog(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Delay Between Requests:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                             Text("${summary.delayMs} ms", fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                if (summary.exceedsThreshold || summary.plannedRequestCount > VariationConfig.DEFAULT_SAFETY_THRESHOLD) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("⚠️", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "High Volume Notice: Planned request count (${summary.plannedRequestCount}) exceeds the default ${VariationConfig.DEFAULT_SAFETY_THRESHOLD} threshold.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }

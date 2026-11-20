@@ -1,9 +1,9 @@
 package com.example.basicbrowser.variation.model
 
 /**
- * Lightweight result metadata for a single executed variation request.
+ * Result metadata for a single executed variation request.
  *
- * NOTE: Full response bodies are intentionally discarded after measuring size
+ * Full response bodies are intentionally discarded after measuring size
  * to strictly prevent memory exhaustion on mobile devices.
  */
 data class VariationResult(
@@ -13,7 +13,11 @@ data class VariationResult(
     val responseSizeBytes: Long,
     val elapsedTimeMs: Long,
     val errorMessage: String? = null,
-    val isTruncated: Boolean = false
+    val isTruncated: Boolean = false,
+    val attackType: AttackType = AttackType.SNIPER,
+    val positionPayloads: Map<String, String> = emptyMap(),
+    val rawRequestText: String? = null,
+    val activeInsertionPoint: InsertionPoint? = null
 ) {
     val displayPayload: String
         get() = VariationSubstitution.truncateForDisplay(
@@ -29,4 +33,3 @@ data class VariationResult(
             )
         }
 }
-

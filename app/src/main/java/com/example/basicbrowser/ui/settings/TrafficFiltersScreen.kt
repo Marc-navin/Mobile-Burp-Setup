@@ -1,6 +1,7 @@
 package com.example.basicbrowser.ui.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,12 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.basicbrowser.filter.data.TrafficFilterRepository
 import com.example.basicbrowser.filter.model.InterceptFilterSettings
 import com.example.basicbrowser.filter.model.ScopeFilterOption
+import com.example.basicbrowser.theme.*
 
 /**
  * Traffic Filters Screen.
@@ -43,18 +46,20 @@ fun TrafficFiltersScreen(
                         Text(
                             text = "Traffic Filters",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 20.sp,
+                            color = OnSurface
                         )
                         Text(
                             text = "Intercept Bypass & History Criteria",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = OnSurfaceVariant
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Primary)
                     }
                 },
                 actions = {
@@ -64,11 +69,11 @@ fun TrafficFiltersScreen(
                             filterRepository.updateInterceptFilter(InterceptFilterSettings())
                         }
                     ) {
-                        Text("Reset All")
+                        Text("Reset All", color = Primary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = SurfaceContainerLowest
                 )
             )
         }
@@ -85,8 +90,9 @@ fun TrafficFiltersScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
@@ -100,16 +106,23 @@ fun TrafficFiltersScreen(
                         Text(
                             text = "Global Target Scope",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = OnSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Scope defines which domains are authorized for testing and filtering.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = OnSurfaceVariant
                         )
                     }
-                    Button(onClick = onNavigateToScope) {
+                    Button(
+                        onClick = onNavigateToScope,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = OnPrimary
+                        )
+                    ) {
                         Text("Edit Scope")
                     }
                 }
@@ -119,16 +132,17 @@ fun TrafficFiltersScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "⚡ Intercept Early Bypass Filters",
+                        text = "Intercept Early Bypass Filters",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Primary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -208,16 +222,17 @@ fun TrafficFiltersScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = SurfaceContainerLow
                 ),
+                border = BorderStroke(1.dp, SurfaceContainerHigh),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "📜 HTTP History Display Filters",
+                        text = "HTTP History Display Filters",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Primary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(

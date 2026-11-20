@@ -1,48 +1,68 @@
 package com.example.basicbrowser.ui.intercept
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
+import com.example.basicbrowser.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.basicbrowser.data.model.HighlightColor
+import com.example.basicbrowser.data.model.RequestAnnotation
+import com.example.basicbrowser.data.repository.RequestAnnotationRepository
 import com.example.basicbrowser.filter.data.TrafficFilterRepository
 import com.example.basicbrowser.filter.engine.TrafficFilterEngine
 import com.example.basicbrowser.filter.ui.TrafficFilterBottomSheet
 import com.example.basicbrowser.proxy.intercept.InterceptManager
 import com.example.basicbrowser.proxy.intercept.InterceptedRequest
 import com.example.basicbrowser.scope.data.ScopeRepository
+import com.example.basicbrowser.ui.menu.RequestContextBottomSheet
+import com.example.basicbrowser.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InterceptScreen(
     onItemClick: (String) -> Unit,
     onBackClick: () -> Unit,
-    onNavigateToScope: () -> Unit = {}
+    onNavigateToScope: () -> Unit = {},
+    onNavigateToBrowser: (String) -> Unit = {},
+    onNavigateToRepeater: () -> Unit = {},
+    onNavigateToVariation: () -> Unit = {}
 ) {
     BackHandler(onBack = onBackClick)
 
+    val context = LocalContext.current
     val manager = remember { InterceptManager.getInstance() }
     val scopeRepository = remember { ScopeRepository.getInstance() }
     val filterRepository = remember { TrafficFilterRepository.getInstance() }
+    val annotationRepo = remember { RequestAnnotationRepository.getInstance(context) }
 
     val isInterceptEnabled by manager.isInterceptEnabled.collectAsState()
     val pausedRequests by manager.pausedRequests.collectAsState()
     val interceptFilterState by filterRepository.interceptFilterState.collectAsState()
     val scopeRules by scopeRepository.rules.collectAsState()
+    val annotations by annotationRepo.annotations.collectAsState()
+    val savedRequests by annotationRepo.savedRequests.collectAsState()
 
     var showFilterSheet by remember { mutableStateOf(false) }
+    var contextMenuItem by remember { mutableStateOf<InterceptedRequest?>(null) }
 
     // Display-only filtering: purely determines which requests are rendered in the list.
     // Underlying InterceptManager queue is never altered by display filtering.
@@ -63,26 +83,56 @@ fun InterceptScreen(
         )
     }
 
+    if (contextMenuItem != null) {
+        val item = contextMenuItem!!
+        RequestContextBottomSheet(
+            id = item.id,
+            url = item.originalRequest.url,
+            method = item.originalRequest.method,
+            requestHeaders = item.originalRequest.headers,
+            requestBody = item.originalRequest.body,
+            isIntercept = true,
+            onDismiss = { contextMenuItem = null },
+            onNavigateToBrowser = onNavigateToBrowser,
+            onNavigateToRepeater = onNavigateToRepeater,
+            onNavigateToVariation = onNavigateToVariation
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = SurfaceContainerLowest,
+                    titleContentColor = OnSurface,
+                    navigationIconContentColor = OnSurface,
+                    actionIconContentColor = OnSurface
+                ),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_intercept),
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "⚡ Intercept",
+                            text = "Intercept",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         if (pausedRequests.isNotEmpty()) {
                             val isFiltered = !interceptFilterState.isDefault()
                             Badge(
-                                containerColor = if (isFiltered) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primary,
-                                contentColor = if (isFiltered) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimary
+                                containerColor = if (isFiltered) SurfaceContainerHigh else TertiaryContainer,
+                                contentColor = if (isFiltered) Primary else SurfaceContainerLowest
                             ) {
                                 Text(
                                     text = if (isFiltered) "${filteredPausedRequests.size}/${pausedRequests.size}" else "${pausedRequests.size}",
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -91,7 +141,7 @@ fun InterceptScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text("<", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = OnSurface)
                     }
                 },
                 actions = {
@@ -101,17 +151,30 @@ fun InterceptScreen(
                         BadgedBox(
                             badge = {
                                 if (activeFilters > 0) {
-                                    Badge { Text("$activeFilters") }
+                                    Badge(
+                                        containerColor = Primary,
+                                        contentColor = OnPrimary
+                                    ) { Text("$activeFilters") }
                                 }
                             }
                         ) {
-                            Text("🔍", fontSize = 16.sp)
+                            Icon(
+                                painter = painterResource(R.drawable.ic_filter_sliders),
+                                contentDescription = "Filter",
+                                tint = OnSurface,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
 
                     // Scope Manager Quick Button
                     IconButton(onClick = onNavigateToScope) {
-                        Text("🎯", fontSize = 16.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_scope_target),
+                            contentDescription = "Scope",
+                            tint = OnSurface,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             )
@@ -120,6 +183,7 @@ fun InterceptScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Surface)
                 .padding(paddingValues)
         ) {
             // Master Intercept Toggle Card
@@ -127,12 +191,13 @@ fun InterceptScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(
+                    1.dp,
+                    if (isInterceptEnabled) TertiaryContainer.copy(alpha = 0.5f) else SurfaceContainerHigh
+                ),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isInterceptEnabled) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    }
+                    containerColor = SurfaceContainerLow
                 )
             ) {
                 Row(
@@ -144,15 +209,21 @@ fun InterceptScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        if (isInterceptEnabled) Tertiary else Outline,
+                                        RoundedCornerShape(4.dp)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (isInterceptEnabled) "Intercept is ACTIVE" else "Intercept is OFF",
+                                text = if (isInterceptEnabled) "INTERCEPTING" else "INTERCEPT OFF",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isInterceptEnabled) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
+                                fontFamily = FontFamily.Monospace,
+                                color = if (isInterceptEnabled) Tertiary else OnSurfaceVariant
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -163,16 +234,18 @@ fun InterceptScreen(
                                 "Requests pass through directly without pausing"
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (isInterceptEnabled) {
-                                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                            }
+                            color = OnSurfaceVariant
                         )
                     }
                     Switch(
                         checked = isInterceptEnabled,
-                        onCheckedChange = { manager.setEnabled(it) }
+                        onCheckedChange = { manager.setEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = SurfaceContainerLowest,
+                            checkedTrackColor = Primary,
+                            uncheckedThumbColor = OnSurfaceVariant,
+                            uncheckedTrackColor = SurfaceContainerHighest
+                        )
                     )
                 }
             }
@@ -180,13 +253,17 @@ fun InterceptScreen(
             // Queue controls & count bar
             if (pausedRequests.isNotEmpty()) {
                 Surface(
-                    color = MaterialTheme.colorScheme.surface,
+                    color = SurfaceContainerLow,
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, SurfaceContainerHigh),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -199,20 +276,32 @@ fun InterceptScreen(
                             },
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontFamily = FontFamily.Monospace,
+                            color = OnSurfaceVariant
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(
+                            Button(
                                 onClick = { manager.forwardAll() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Primary,
+                                    contentColor = OnPrimary
+                                ),
+                                shape = RoundedCornerShape(6.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                             ) {
-                                Text("Forward All", fontSize = 12.sp, color = Color(0xFF16A34A))
+                                Text("Forward All", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
-                            OutlinedButton(
+                            Button(
                                 onClick = { manager.dropAll() },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = ErrorContainer.copy(alpha = 0.35f),
+                                    contentColor = Error
+                                ),
+                                border = BorderStroke(1.dp, Error.copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(6.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                             ) {
-                                Text("Drop All", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                                Text("Drop All", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -231,15 +320,26 @@ fun InterceptScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            text = if (isInterceptEnabled) "⏳" else "⏸️",
-                            fontSize = 48.sp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(SurfaceContainerLow, RoundedCornerShape(16.dp))
+                                .border(1.dp, SurfaceContainerHigh, RoundedCornerShape(16.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(if (isInterceptEnabled) R.drawable.ic_nav_traffic else R.drawable.ic_action_pause),
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = if (isInterceptEnabled) "Waiting for requests…" else "Intercept is paused",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurface
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -249,7 +349,8 @@ fun InterceptScreen(
                                 "Toggle Intercept to ACTIVE to pause incoming requests."
                             },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = OnSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
@@ -266,22 +367,34 @@ fun InterceptScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text("🔍", fontSize = 42.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.ic_filter_sliders),
+                            contentDescription = null,
+                            tint = Outline,
+                            modifier = Modifier.size(42.dp)
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "No requests match active display filters",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = OnSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "${pausedRequests.size} request(s) paused in queue. Adjust or reset filters to display them.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = OnSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedButton(
-                            onClick = { filterRepository.resetInterceptFilter() }
+                        Button(
+                            onClick = { filterRepository.resetInterceptFilter() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = SurfaceContainerHigh,
+                                contentColor = Primary
+                            ),
+                            shape = RoundedCornerShape(8.dp)
                         ) {
                             Text("Reset Filters")
                         }
@@ -297,12 +410,29 @@ fun InterceptScreen(
                         val isInScope = remember(item.originalRequest.url, scopeRules) {
                             scopeRepository.isInScope(item.originalRequest.url)
                         }
+                        val itemAnnotation = annotations[item.id]
+                        val isItemSaved = savedRequests.any { it.id == item.id }
+
                         InterceptedRequestCard(
                             item = item,
                             isInScope = isInScope,
+                            annotation = itemAnnotation,
+                            isSaved = isItemSaved,
                             onClick = { onItemClick(item.id) },
-                            onForward = { manager.forward(item.id) },
-                            onDrop = { manager.drop(item.id) }
+                            onLongClick = { contextMenuItem = item },
+                            onMenuClick = { contextMenuItem = item },
+                            onForward = {
+                                val pending = manager.getPausedRequest(item.id)
+                                if (pending != null && !pending.future.isDone) {
+                                    manager.forward(item.id)
+                                }
+                            },
+                            onDrop = {
+                                val pending = manager.getPausedRequest(item.id)
+                                if (pending != null && !pending.future.isDone) {
+                                    manager.drop(item.id)
+                                }
+                            }
                         )
                     }
                 }
@@ -311,23 +441,40 @@ fun InterceptScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InterceptedRequestCard(
     item: InterceptedRequest,
     isInScope: Boolean,
+    annotation: RequestAnnotation? = null,
+    isSaved: Boolean = false,
     onClick: () -> Unit,
+    onLongClick: () -> Unit = {},
+    onMenuClick: () -> Unit = {},
     onForward: () -> Unit,
     onDrop: () -> Unit
 ) {
+    val highlightColor = remember(annotation?.highlightColor) {
+        val c = annotation?.highlightColor ?: HighlightColor.NONE
+        if (c == HighlightColor.NONE) null else Color(c.colorValue)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(8.dp),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = highlightColor ?: SurfaceContainerLow
+        ),
+        border = BorderStroke(1.dp, SurfaceContainerHigh),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Header Row: Method + Protocol + Scope Badge + Timeout
+            // Header Row: Method + Protocol + Scope Badge + Indicators + Overflow Menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -339,28 +486,30 @@ private fun InterceptedRequestCard(
                 ) {
                     // Method pill
                     Surface(
-                        color = methodColor(item.originalRequest.method),
+                        color = methodBgColor(item.originalRequest.method),
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             text = item.originalRequest.method,
-                            color = Color.White,
+                            color = methodTextColor(item.originalRequest.method),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
 
                     // Protocol badge
                     Surface(
-                        color = if (item.isHttps) Color(0xFF15803D) else Color(0xFF6B7280),
+                        color = SurfaceContainerHigh,
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             text = if (item.isHttps) "HTTPS" else "HTTP",
-                            color = Color.White,
+                            color = if (item.isHttps) Secondary else OnSurfaceVariant,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                         )
                     }
@@ -368,27 +517,65 @@ private fun InterceptedRequestCard(
                     // Scope badge
                     if (isInScope) {
                         Surface(
-                            color = Color(0xFF0284C7),
-                            shape = RoundedCornerShape(4.dp)
+                            color = MethodGetBg,
+                            shape = RoundedCornerShape(4.dp),
+                            border = BorderStroke(1.dp, Primary.copy(alpha = 0.4f))
                         ) {
                             Text(
                                 text = "IN SCOPE",
-                                color = Color.White,
+                                color = Primary,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                             )
                         }
                     }
+
+                    if (isSaved) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_action_star),
+                            contentDescription = "Saved",
+                            tint = Tertiary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+
+                    if (!annotation?.note.isNullOrBlank()) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_action_edit),
+                            contentDescription = "Note",
+                            tint = Primary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
                 }
 
-                // ID fragment
-                Text(
-                    text = "#${item.id.take(6)}",
-                    fontSize = 11.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // ID fragment
+                    Text(
+                        text = "#${item.id.take(6)}",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = OnSurfaceVariant
+                    )
+
+                    // Overflow menu button
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Text(
+                            text = "⋮",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = OnSurfaceVariant
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -398,6 +585,8 @@ private fun InterceptedRequestCard(
                 text = item.originalRequest.url,
                 fontSize = 13.sp,
                 fontFamily = FontFamily.Monospace,
+                color = OnSurface,
+                fontWeight = FontWeight.Medium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -420,30 +609,36 @@ private fun InterceptedRequestCard(
                 Text(
                     text = infoText,
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontFamily = FontFamily.Monospace,
+                    color = Outline
                 )
 
                 // Quick Forward / Drop buttons
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalButton(
+                    Button(
                         onClick = onForward,
+                        shape = RoundedCornerShape(6.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = OnPrimary
+                        ),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFDCFCE7),
-                            contentColor = Color(0xFF15803D)
-                        )
+                        modifier = Modifier.height(30.dp)
                     ) {
-                        Text("Forward", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Forward", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
-                    FilledTonalButton(
+                    Button(
                         onClick = onDrop,
+                        shape = RoundedCornerShape(6.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ErrorContainer.copy(alpha = 0.35f),
+                            contentColor = Error
+                        ),
+                        border = BorderStroke(1.dp, Error.copy(alpha = 0.4f)),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFFEE2E2),
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
+                        modifier = Modifier.height(30.dp)
                     ) {
-                        Text("Drop", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Drop", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -451,15 +646,22 @@ private fun InterceptedRequestCard(
     }
 }
 
-private fun methodColor(method: String): Color {
+private fun methodBgColor(method: String): Color {
     return when (method.uppercase()) {
-        "GET" -> Color(0xFF2563EB)
-        "POST" -> Color(0xFF16A34A)
-        "PUT" -> Color(0xFFD97706)
-        "DELETE" -> Color(0xFFDC2626)
-        "PATCH" -> Color(0xFF9333EA)
-        "HEAD" -> Color(0xFF0891B2)
-        "OPTIONS" -> Color(0xFF4B5563)
-        else -> Color(0xFF6B7280)
+        "GET" -> MethodGetBg
+        "POST" -> MethodPostBg
+        "PUT" -> MethodPutBg
+        "DELETE" -> MethodDeleteBg
+        else -> SurfaceContainerHigh
+    }
+}
+
+private fun methodTextColor(method: String): Color {
+    return when (method.uppercase()) {
+        "GET" -> MethodGetText
+        "POST" -> MethodPostText
+        "PUT" -> MethodPutText
+        "DELETE" -> MethodDeleteText
+        else -> OnSurfaceVariant
     }
 }

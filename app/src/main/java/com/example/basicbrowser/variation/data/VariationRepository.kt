@@ -21,6 +21,7 @@ class VariationRepository(
     companion object {
         const val DEFAULT_MAX_RESULTS = 500
         private const val TAG = "VariationRepository"
+        const val DEFAULT_RAW_TEMPLATE = "GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: BasicBrowser/1.0\r\nAccept: */*\r\n\r\n"
 
         @Volatile
         private var instance: VariationRepository? = null
@@ -41,11 +42,29 @@ class VariationRepository(
     private val _baseRequest = MutableStateFlow<HttpRequestData?>(null)
     val baseRequest: StateFlow<HttpRequestData?> = _baseRequest.asStateFlow()
 
+    private val _rawTemplate = MutableStateFlow(DEFAULT_RAW_TEMPLATE)
+    val rawTemplate: StateFlow<String> = _rawTemplate.asStateFlow()
+
+    private val _targetScheme = MutableStateFlow("https")
+    val targetScheme: StateFlow<String> = _targetScheme.asStateFlow()
+
+    private val _targetPort = MutableStateFlow(443)
+    val targetPort: StateFlow<Int> = _targetPort.asStateFlow()
+
     private val _selectedAttackType = MutableStateFlow(AttackType.SNIPER)
     val selectedAttackType: StateFlow<AttackType> = _selectedAttackType.asStateFlow()
 
     fun setAttackType(attackType: AttackType) {
         _selectedAttackType.value = attackType
+    }
+
+    fun setTargetMetadata(scheme: String, port: Int) {
+        _targetScheme.value = scheme
+        _targetPort.value = port
+    }
+
+    fun updateRawTemplate(template: String) {
+        _rawTemplate.value = template
     }
 
     private val internalResults = ArrayList<VariationResult>(maxStoredResults)
@@ -60,6 +79,27 @@ class VariationRepository(
     @Synchronized
     fun setBaseRequest(request: HttpRequestData) {
         _baseRequest.value = request
+        val rawUrl = request.url.trim()
+        val scheme = if (rawUrl.startsWith("https://", ignoreCase = true)) {
+            "https"
+        } else if (rawUrl.startsWith("http://", ignoreCase = true)) {
+            "http"
+        } else {
+            "https"
+        }
+        val port = try {
+            val uri = java.net.URI(rawUrl)
+            if (uri.port != -1) uri.port else if (scheme == "https") 443 else 80
+        } catch (_: Exception) {
+            if (scheme == "https") 443 else 80
+        }
+        _targetScheme.value = scheme
+        _targetPort.value = port
+        _rawTemplate.value = com.example.basicbrowser.variation.engine.RawHttpConverter.serializeToRawHttp(
+            request = request,
+            targetScheme = scheme,
+            targetPort = port
+        )
         _jobState.value = VariationJobState.Configuring
     }
 
