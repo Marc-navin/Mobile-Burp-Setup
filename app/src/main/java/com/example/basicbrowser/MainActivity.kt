@@ -14,6 +14,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -45,6 +46,11 @@ import com.example.basicbrowser.ui.intercept.InterceptDetailScreen
 import com.example.basicbrowser.repeater.ui.RepeaterScreen
 import com.example.basicbrowser.variation.ui.VariationScreen
 import com.example.basicbrowser.ui.dev.CaVerificationScreen
+import com.example.basicbrowser.scope.ui.ScopeScreen
+import com.example.basicbrowser.ui.settings.SettingsScreen
+import com.example.basicbrowser.ui.settings.ProxySettingsScreen
+import com.example.basicbrowser.ui.settings.TrafficFiltersScreen
+import com.example.basicbrowser.ui.settings.GeneralSettingsScreen
 import com.example.basicbrowser.data.model.HttpHistoryItem
 import com.example.basicbrowser.proxy.intercept.InterceptManager
 import androidx.compose.ui.focus.onFocusChanged
@@ -110,6 +116,9 @@ class MainActivity : ComponentActivity() {
         CertificateAuthority.initializeAsync(applicationContext)
 
         Thread {
+            com.example.basicbrowser.scope.data.ScopeRepository.getInstance(applicationContext)
+            com.example.basicbrowser.filter.data.TrafficFilterRepository.getInstance(applicationContext)
+
             com.example.basicbrowser.data.repository.HttpHistoryRepository.getInstance()
                 .setTempFilesDir(applicationContext.cacheDir)
 
@@ -190,12 +199,37 @@ sealed class Screen {
     object VariationLab : Screen()
     object History : Screen()
     data class HistoryDetail(val item: HttpHistoryItem) : Screen()
-    object CaVerification : Screen()  // DEVELOPMENT ONLY
+
+    // Centralized Settings Navigation
+    object Settings : Screen()
+    object TargetScope : Screen()
+    object CaVerification : Screen()
+    object ProxySettings : Screen()
+    object TrafficFilters : Screen()
+    object GeneralSettings : Screen()
+}
+
+private fun isSettingsActive(current: Screen, previous: Screen?): Boolean {
+    return when (current) {
+        Screen.Settings,
+        Screen.ProxySettings,
+        Screen.TrafficFilters,
+        Screen.GeneralSettings,
+        Screen.CaVerification -> true
+        Screen.TargetScope -> previous == Screen.Settings || previous in listOf(
+            Screen.ProxySettings,
+            Screen.TrafficFilters,
+            Screen.GeneralSettings,
+            Screen.CaVerification
+        )
+        else -> false
+    }
 }
 
 @Composable
 fun AppScreen(externalUrl: String? = null) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Browser) }
+    var previousScreen by remember { mutableStateOf<Screen?>(null) }
     var targetBrowserUrl by remember { mutableStateOf<String?>(externalUrl) }
 
     val interceptManager = remember { InterceptManager.getInstance() }
@@ -212,58 +246,76 @@ fun AppScreen(externalUrl: String? = null) {
     Scaffold(
         bottomBar = {
             if (currentScreen !is Screen.HistoryDetail &&
-                currentScreen !is Screen.InterceptDetail &&
-                currentScreen !is Screen.CaVerification
+                currentScreen !is Screen.InterceptDetail
             ) {
-                NavigationBar {
+                NavigationBar(
+                    windowInsets = WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
+                ) {
                     NavigationBarItem(
-                        icon = { Text("🌐") },
-                        label = { Text("Browser") },
+                        icon = { Text("🌐", fontSize = 16.sp) },
+                        label = { NavigationBarLabel("Browser") },
                         selected = currentScreen == Screen.Browser,
-                        onClick = { currentScreen = Screen.Browser }
+                        onClick = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.Browser
+                        }
                     )
                     NavigationBarItem(
                         icon = {
                             BadgedBox(
                                 badge = {
                                     if (pausedRequests.isNotEmpty()) {
-                                        Badge { Text("${pausedRequests.size}") }
+                                        Badge { Text("${pausedRequests.size}", fontSize = 9.sp) }
                                     } else if (isInterceptEnabled) {
                                         Badge(containerColor = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             ) {
-                                Text("⚡")
+                                Text("⚡", fontSize = 16.sp)
                             }
                         },
-                        label = { Text("Intercept") },
+                        label = { NavigationBarLabel("Intercept") },
                         selected = currentScreen == Screen.Intercept,
-                        onClick = { currentScreen = Screen.Intercept }
+                        onClick = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.Intercept
+                        }
                     )
                     NavigationBarItem(
-                        icon = { Text("🔁") },
-                        label = { Text("Repeater") },
+                        icon = { Text("🔁", fontSize = 16.sp) },
+                        label = { NavigationBarLabel("Repeater") },
                         selected = currentScreen == Screen.Repeater,
-                        onClick = { currentScreen = Screen.Repeater }
+                        onClick = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.Repeater
+                        }
                     )
                     NavigationBarItem(
-                        icon = { Text("🧪") },
-                        label = { Text("Lab") },
+                        icon = { Text("🧪", fontSize = 16.sp) },
+                        label = { NavigationBarLabel("Lab") },
                         selected = currentScreen == Screen.VariationLab,
-                        onClick = { currentScreen = Screen.VariationLab }
+                        onClick = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.VariationLab
+                        }
                     )
                     NavigationBarItem(
-                        icon = { Text("📜") },
-                        label = { Text("History") },
+                        icon = { Text("📜", fontSize = 16.sp) },
+                        label = { NavigationBarLabel("History") },
                         selected = currentScreen == Screen.History,
-                        onClick = { currentScreen = Screen.History }
+                        onClick = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.History
+                        }
                     )
-                    // CA Certificate & Trust Management
                     NavigationBarItem(
-                        icon = { Text("🔒") },
-                        label = { Text("CA Cert") },
-                        selected = currentScreen == Screen.CaVerification,
-                        onClick = { currentScreen = Screen.CaVerification }
+                        icon = { Text("⚙️", fontSize = 16.sp) },
+                        label = { NavigationBarLabel("Settings") },
+                        selected = isSettingsActive(currentScreen, previousScreen),
+                        onClick = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.Settings
+                        }
                     )
                 }
             }
@@ -282,7 +334,11 @@ fun AppScreen(externalUrl: String? = null) {
                     targetUrl = targetBrowserUrl,
                     onUrlConsumed = { targetBrowserUrl = null },
                     interceptManager = interceptManager,
-                    isActive = isBrowser
+                    isActive = isBrowser,
+                    onNavigateToScope = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.TargetScope
+                    }
                 )
             }
 
@@ -292,7 +348,11 @@ fun AppScreen(externalUrl: String? = null) {
                 }
                 is Screen.Intercept -> InterceptScreen(
                     onItemClick = { currentScreen = Screen.InterceptDetail(it) },
-                    onBackClick = { currentScreen = Screen.Browser }
+                    onBackClick = { currentScreen = Screen.Browser },
+                    onNavigateToScope = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.TargetScope
+                    }
                 )
                 is Screen.InterceptDetail -> InterceptDetailScreen(
                     requestId = screen.requestId,
@@ -307,7 +367,11 @@ fun AppScreen(externalUrl: String? = null) {
                 )
                 is Screen.History -> HistoryScreen(
                     onItemClick = { currentScreen = Screen.HistoryDetail(it) },
-                    onBackClick = { currentScreen = Screen.Browser }
+                    onBackClick = { currentScreen = Screen.Browser },
+                    onNavigateToScope = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.TargetScope
+                    }
                 )
                 is Screen.HistoryDetail -> HistoryDetailScreen(
                     item = screen.item,
@@ -315,17 +379,70 @@ fun AppScreen(externalUrl: String? = null) {
                     onNavigateToRepeater = { currentScreen = Screen.Repeater },
                     onNavigateToVariation = { currentScreen = Screen.VariationLab }
                 )
-                // DEVELOPMENT ONLY
+                is Screen.Settings -> {
+                    BackHandler { currentScreen = Screen.Browser }
+                    SettingsScreen(
+                        onNavigateToTargetScope = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.TargetScope
+                        },
+                        onNavigateToCaManagement = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.CaVerification
+                        },
+                        onNavigateToProxySettings = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.ProxySettings
+                        },
+                        onNavigateToTrafficFilters = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.TrafficFilters
+                        },
+                        onNavigateToGeneralSettings = {
+                            previousScreen = currentScreen
+                            currentScreen = Screen.GeneralSettings
+                        }
+                    )
+                }
                 is Screen.CaVerification -> CaVerificationScreen(
-                    onBackClick = { currentScreen = Screen.Browser },
+                    onBackClick = { currentScreen = Screen.Settings },
                     onNavigateToBrowser = { url ->
                         targetBrowserUrl = url
+                        previousScreen = currentScreen
                         currentScreen = Screen.Browser
                     }
+                )
+                is Screen.TargetScope -> ScopeScreen(
+                    onBackClick = { currentScreen = previousScreen ?: Screen.Settings }
+                )
+                is Screen.ProxySettings -> ProxySettingsScreen(
+                    onBackClick = { currentScreen = Screen.Settings }
+                )
+                is Screen.TrafficFilters -> TrafficFiltersScreen(
+                    onBackClick = { currentScreen = Screen.Settings },
+                    onNavigateToScope = {
+                        previousScreen = currentScreen
+                        currentScreen = Screen.TargetScope
+                    }
+                )
+                is Screen.GeneralSettings -> GeneralSettingsScreen(
+                    onBackClick = { currentScreen = Screen.Settings }
                 )
             }
         }
     }
+}
+
+@Composable
+private fun NavigationBarLabel(text: String) {
+    Text(
+        text = text,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Medium,
+        maxLines = 1,
+        softWrap = false,
+        letterSpacing = (-0.2).sp
+    )
 }
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -335,7 +452,8 @@ fun BrowserScreen(
     targetUrl: String? = null,
     onUrlConsumed: () -> Unit = {},
     interceptManager: InterceptManager = remember { InterceptManager.getInstance() },
-    isActive: Boolean = true
+    isActive: Boolean = true,
+    onNavigateToScope: () -> Unit = {}
 ) {
     var urlInput by remember { mutableStateOf(TextFieldValue(targetUrl ?: "https://www.google.com")) }
     var isAddressBarFocused by remember { mutableStateOf(false) }
@@ -380,21 +498,23 @@ fun BrowserScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
                 .windowInsetsPadding(WindowInsets.statusBars),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
                 onClick = { webView?.let { customGoBack(it) } },
-                enabled = canGoBack
+                enabled = canGoBack,
+                modifier = Modifier.size(36.dp)
             ) {
-                Text("<")
+                Text("<", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
             IconButton(
                 onClick = { webView?.goForward() },
-                enabled = canGoForward
+                enabled = canGoForward,
+                modifier = Modifier.size(36.dp)
             ) {
-                Text(">")
+                Text(">", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
             IconButton(
                 onClick = {
@@ -404,7 +524,8 @@ fun BrowserScreen(
                     } else {
                         webView?.reload()
                     }
-                }
+                },
+                modifier = Modifier.size(36.dp)
             ) {
                 Text(
                     text = if (isLoading) "✕" else "↻",
@@ -420,15 +541,8 @@ fun BrowserScreen(
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 4.dp)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused && !isAddressBarFocused) {
-                            urlInput = urlInput.copy(
-                                selection = TextRange(0, urlInput.text.length)
-                            )
-                        }
-                        isAddressBarFocused = focusState.isFocused
-                    },
+                    .padding(horizontal = 6.dp),
+                shape = RoundedCornerShape(24.dp),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -448,8 +562,12 @@ fun BrowserScreen(
                     }
                 }
             )
-            Button(onClick = { navigateToTarget() }) {
-                Text("Go")
+            Button(
+                onClick = { navigateToTarget() },
+                shape = RoundedCornerShape(20.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Text("Go", fontWeight = FontWeight.Bold)
             }
         }
 

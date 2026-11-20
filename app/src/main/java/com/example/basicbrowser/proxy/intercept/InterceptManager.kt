@@ -1,6 +1,10 @@
 package com.example.basicbrowser.proxy.intercept
 
 import android.util.Log
+import com.example.basicbrowser.filter.data.TrafficFilterRepository
+import com.example.basicbrowser.filter.engine.TrafficFilterEngine
+import com.example.basicbrowser.filter.model.InterceptFilterSettings
+import com.example.basicbrowser.scope.data.ScopeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +25,9 @@ import java.util.concurrent.TimeoutException
  */
 class InterceptManager internal constructor(
     var maxPaused: Int = DEFAULT_MAX_PAUSED,
-    var timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS
+    var timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS,
+    private val scopeRepositoryProvider: () -> ScopeRepository = { ScopeRepository.getInstance() },
+    private val filterRepositoryProvider: () -> TrafficFilterRepository = { TrafficFilterRepository.getInstance() }
 ) {
 
     private val _isInterceptEnabled = MutableStateFlow(false)
@@ -31,6 +37,13 @@ class InterceptManager internal constructor(
     val pausedRequests: StateFlow<List<InterceptedRequest>> = _pausedRequests.asStateFlow()
 
     private val pausedList = ArrayList<InterceptedRequest>()
+
+    val filterSettings: StateFlow<InterceptFilterSettings>
+        get() = filterRepositoryProvider().interceptFilterSettings
+
+    fun updateFilterSettings(settings: InterceptFilterSettings) {
+        filterRepositoryProvider().updateInterceptFilter(settings)
+    }
 
     /**
      * Enables or disables intercept mode. When disabling, any currently paused
@@ -64,6 +77,14 @@ class InterceptManager internal constructor(
         hostname: String
     ): InterceptAction {
         if (!isEnabled()) {
+            return InterceptAction.Forward(request)
+        }
+
+        // Check Target Scope and Intercept Traffic Filters
+        val scopeRepo = scopeRepositoryProvider()
+        val currentFilters = filterRepositoryProvider().interceptFilterSettings.value
+        if (!TrafficFilterEngine.shouldInterceptRequest(request, isHttps, hostname, scopeRepo, currentFilters)) {
+            Log.d(TAG, "Request [$id] ${request.method} ${request.url} bypassed interception (scope/filters)")
             return InterceptAction.Forward(request)
         }
 

@@ -1,5 +1,6 @@
 package com.example.basicbrowser.ui.dev
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -41,6 +42,7 @@ fun CaVerificationScreen(
     onBackClick: () -> Unit,
     onNavigateToBrowser: (url: String) -> Unit = {}
 ) {
+    BackHandler(onBack = onBackClick)
     val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.US) }
 

@@ -19,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.basicbrowser.data.model.HttpHistoryItem
 import com.example.basicbrowser.data.repository.HttpHistoryRepository
+import com.example.basicbrowser.filter.data.TrafficFilterRepository
+import com.example.basicbrowser.filter.engine.TrafficFilterEngine
+import com.example.basicbrowser.filter.ui.TrafficFilterBottomSheet
+import com.example.basicbrowser.scope.data.ScopeRepository
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -28,13 +32,38 @@ import java.util.Locale
 @Composable
 fun HistoryScreen(
     onItemClick: (HttpHistoryItem) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onNavigateToScope: () -> Unit = {}
 ) {
     BackHandler(onBack = onBackClick)
 
     val repository = remember { HttpHistoryRepository.getInstance() }
+    val scopeRepository = remember { ScopeRepository.getInstance() }
+    val filterRepository = remember { TrafficFilterRepository.getInstance() }
+
     val historyItems by repository.history.collectAsState()
+    val filterState by filterRepository.historyFilterState.collectAsState()
+    val scopeRules by scopeRepository.rules.collectAsState()
+
     var showClearDialog by remember { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+
+    val filteredItems = remember(historyItems, filterState, scopeRules) {
+        TrafficFilterEngine.filterHistory(historyItems, filterState, scopeRepository)
+    }
+
+    if (showFilterSheet) {
+        TrafficFilterBottomSheet(
+            currentState = filterState,
+            onDismiss = { showFilterSheet = false },
+            onApply = { filterRepository.updateHistoryFilter(it) },
+            onReset = { filterRepository.resetHistoryFilter() },
+            onNavigateToScope = onNavigateToScope,
+            title = "HTTP History Filters",
+            visibleCount = filteredItems.size,
+            totalCount = historyItems.size
+        )
+    }
 
     if (showClearDialog) {
         AlertDialog(
@@ -67,16 +96,19 @@ fun HistoryScreen(
                         Text("HTTP History")
                         if (historyItems.isNotEmpty()) {
                             Spacer(modifier = Modifier.width(8.dp))
+                            val isFiltered = !filterState.isDefault()
                             Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer,
+                                color = if (isFiltered) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer,
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(
-                                    text = historyItems.size.toString(),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    text = if (isFiltered) "${filteredItems.size}/${historyItems.size}" else historyItems.size.toString(),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    fontWeight = FontWeight.Bold
+                                    color = if (isFiltered) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -88,6 +120,21 @@ fun HistoryScreen(
                     }
                 },
                 actions = {
+                    // 1. Filter Button with badge
+                    val activeFilters = filterState.activeFilterCount()
+                    IconButton(onClick = { showFilterSheet = true }) {
+                        BadgedBox(
+                            badge = {
+                                if (activeFilters > 0) {
+                                    Badge { Text("$activeFilters") }
+                                }
+                            }
+                        ) {
+                            Text("🔍", fontSize = 16.sp)
+                        }
+                    }
+
+                    // 2. Clear History
                     if (historyItems.isNotEmpty()) {
                         TextButton(onClick = { showClearDialog = true }) {
                             Text("Clear", color = MaterialTheme.colorScheme.error)
@@ -122,14 +169,50 @@ fun HistoryScreen(
                     )
                 }
             }
+        } else if (filteredItems.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    Text(
+                        text = "No Matching Traffic",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "All ${historyItems.size} captured requests were hidden by the active filters.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { filterRepository.resetHistoryFilter() }) {
+                        Text("Reset All Filters")
+                    }
+                }
+            }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                items(historyItems, key = { it.id }) { item ->
-                    HistoryItemRow(item = item, onClick = { onItemClick(item) })
+                items(filteredItems, key = { it.id }) { item ->
+                    val isInScope = remember(item.url, scopeRules) {
+                        scopeRepository.isInScope(item.url)
+                    }
+                    HistoryItemRow(
+                        item = item,
+                        isInScope = isInScope,
+                        onClick = { onItemClick(item) }
+                    )
                     HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
@@ -138,7 +221,11 @@ fun HistoryScreen(
 }
 
 @Composable
-fun HistoryItemRow(item: HttpHistoryItem, onClick: () -> Unit) {
+fun HistoryItemRow(
+    item: HttpHistoryItem,
+    isInScope: Boolean = true,
+    onClick: () -> Unit
+) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
     val timeString = remember(item.timestamp) { timeFormat.format(Date(item.timestamp)) }
 
@@ -157,9 +244,25 @@ fun HistoryItemRow(item: HttpHistoryItem, onClick: () -> Unit) {
         // 1. Method badge
         MethodBadge(method = item.method)
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(6.dp))
 
-        // 2. Host & Path
+        // 2. Scope indicator badge
+        Surface(
+            color = if (isInScope) Color(0xFF16A34A).copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f),
+            shape = RoundedCornerShape(4.dp)
+        ) {
+            Text(
+                text = if (isInScope) "IN" else "OUT",
+                color = if (isInScope) Color(0xFF16A34A) else Color.Gray,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        // 3. Host & Path
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -196,7 +299,7 @@ fun HistoryItemRow(item: HttpHistoryItem, onClick: () -> Unit) {
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // 3. Status code badge
+        // 4. Status code badge
         StatusCodeBadge(statusCode = item.statusCode)
     }
 }
